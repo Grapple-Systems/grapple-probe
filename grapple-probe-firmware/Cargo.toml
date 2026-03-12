@@ -1,0 +1,50 @@
+[package]
+name = "grapple-probe"
+version = "1.0.0"
+authors = [
+    "Jonathan Herbst <jonathan.herbst@grapple.systems>",
+    "Seth Pierson <seth.pierson@grapple.systems>",
+]
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+bbqueue = { version = "0.5.1", features = ["thumbv6"] }
+cmsis-dap = { path = "../cmsis-dap", features = ["rp"] }
+cortex-m = { version = "0.7.6", features = ["inline-asm", "critical-section-single-core"] }
+cortex-m-rt = "0.7.0"
+defmt = "1.0.1"
+defmt-rtt = "1.1.0"
+device-info = { path = "../device-info" }
+embassy-executor = { path = "../embassy/embassy-executor", features = ["arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
+embassy-futures = { path = "../embassy/embassy-futures" }
+embassy-rp = { path = "../embassy/embassy-rp", features = ["unstable-pac", "time-driver", "rp2040", "defmt"] }
+embassy-sync = { path = "../embassy/embassy-sync" }
+embassy-time = { path = "../embassy/embassy-time"}
+embassy-usb = { path = "../embassy/embassy-usb", features = ["defmt"]}
+embedded-io-async = "0.7.0"
+embedded-storage-async = "0.4.1"
+fixed = "1.28.0"
+fixed-macro = "1.2"
+grapple-probe-proto = { path = "../grapple-probe/protocol" }
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+pio = { git = "https://github.com/rp-rs/pio-rs", rev = "fa586448b0b223217eec8c92c19fe6823dd04cc4" }
+pio-proc = { git = "https://github.com/rp-rs/pio-rs", rev = "fa586448b0b223217eec8c92c19fe6823dd04cc4" }
+replace_with = { version = "0.1.7", default-features = false, features = ["panic_abort"] }
+sequential-storage = { version = "7.1.0", features = ["defmt"] }
+usb-i2c = { path = "../usb-i2c" }
+
+[[bin]]
+name = "cmsisdap"
+path = "src/bin/cmsis_dap.rs"
+
+[profile.release]
+codegen-units = 1
+debug = 2
+lto = "fat"
+opt-level = "s"
+
+[profile.dev]
+debug = 2
+lto = true
+opt-level = 0

@@ -1,0 +1,17 @@
+# rust
+target
+
+# vscode
+.vscode
+
+# python
+__pycache__
+
+# stuff
+*.log
+*.dsl
+*.uf2
+*.bin
+
+# wireshark
+*.lz4

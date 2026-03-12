@@ -1,0 +1,21 @@
+[package]
+name = "pico-i2c"
+version = "0.1.0"
+authors = [
+    "Jonathan Herbst <jonathan.herbst@grapple.systems>",
+    "Seth Pierson <seth.pierson@grapple.systems>",
+]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+cortex-m = { version = "0.7.6", features = ["inline-asm"] }
+cortex-m-rt = "0.7.0"
+defmt = "1.0.1"
+defmt-rtt = "1.0.0"
+embassy-executor = { path = "../../embassy/embassy-executor", features = ["arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
+embassy-futures = { path = "../../embassy/embassy-futures" }
+usb-i2c = { path = ".." }
+embassy-rp = { path = "../../embassy/embassy-rp", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl", "rp2040"] }
+embassy-usb = { path = "../../embassy/embassy-usb", features = ["defmt"] }
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }

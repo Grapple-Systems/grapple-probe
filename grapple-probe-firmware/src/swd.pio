@@ -1,0 +1,41 @@
+; Copyright (c) 2025 Grapple Systems LLC, All rights reserved.
+; SPDX-License-Identifier: GPL-3.0-or-later
+
+; An swd pio program that clocks at 1/2 the pio clock, and uses a logic high pin to enable swdio output.
+
+; Usage:
+; Start the program and inject an instruction to jump to idle.
+; To perform a read: write to the fifo the address of `read_cmd` in the 5 most significant bits and the number of bits to read in the 27 least significant bits. 
+; To perform a write: write to the fifo the address of `write_cmd` in the 5 most significant bits and the number of bits to write in the 27 least significant bits. 
+; Unfortunately this can't be flexible with the swdio output enable pin which needs to be right next to the swclk pin to work.
+
+; Requirements:
+; - auto push and pull
+; - input pin: swdio
+; - output pin: swdio
+; - set pin: swdio
+; - side set pins: swdio_oe, swclk
+
+.program probe
+.side_set 2 opt
+
+public read_cmd:
+    set pindirs, 0                  side 0b01   ; set swdio to input and clock to high
+read_bitloop:
+    in pins, 1                      side 0b00   ; read a bit on a falling edge of swclk
+    jmp x-- read_bitloop            side 0b01   ; swclk to high and jump if we're not out of bits
+    push                                        ; push the last bits
+
+.wrap_target
+public idle:
+    pull
+    out x, 27                                   ; get the number of bits to operate.
+    out pc, 5                                   ; branch to read or write
+
+public write_cmd:
+    pull
+    set pindirs, 1                  side 0b11   ; set swdio to output and clock to high
+write_bitloop:
+    out pins, 1                     side 0b10   ; write swdio on a falling edge of swclk
+    jmp x-- write_bitloop           side 0b11   ; swclk to high and jump if we're not out of bits
+.wrap                                           ; return to idle

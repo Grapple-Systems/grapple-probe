@@ -1,0 +1,17 @@
+[package]
+name = "packet-gen"
+version = "0.1.0"
+authors = [
+    "Jonathan Herbst <jonathan.herbst@grapple.systems>",
+    "Seth Pierson <seth.pierson@grapple.systems>",
+]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.95"
+quote = "1.0.40"
+syn = "2.0.104"

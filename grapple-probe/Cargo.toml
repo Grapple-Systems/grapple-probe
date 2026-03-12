@@ -1,0 +1,13 @@
+[package]
+name = "grapple-probe-lib"
+version = "0.1.0"
+authors = [
+    "Jonathan Herbst <jonathan.herbst@grapple.systems>",
+    "Seth Pierson <seth.pierson@grapple.systems>",
+]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+nusb = "0.2.1"
+grapple-probe-proto = { path = "protocol" }

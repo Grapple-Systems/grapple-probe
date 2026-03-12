@@ -1,0 +1,40 @@
+; Copyright (c) 2025 Grapple Systems LLC, All rights reserved.
+; SPDX-License-Identifier: GPL-3.0-or-later
+
+; Requirements:
+; - auto push and pull
+; - input pin: tdo
+; - output pin: tdi
+; - set pin: tms
+; - side set pins: tck
+
+.program jtag
+.side_set 1 opt
+
+public swj_clock:
+    out y, 1
+    jmp y-- swj_clock_write_1   side 0b0    ; set clk to low here so we can go fast
+    set pins 0                              ; set the pin half way through the falling so we can go fast
+    jmp x-- swj_clock           side 0b1    ; tck to high and jump if we're not out of bits
+    jmp idle                                ; this is the last bit so we should jump back to idle
+swj_clock_write_1:
+    set pins 1                              ; set the pin half way through the falling so we can go fast
+    jmp x-- swj_clock           side 0b1    ; tck to high and jump if we're not out of bits
+
+public idle:
+.wrap_target
+    pull                        side 0b1    ; pull the command and set clk to high
+    out x, 26                               ; get the number of bits to operate.
+    out y, 1                                ; get the initial tms
+    set pins 1                              ; set tms to high
+    jmp y-- branch                          ; go straight to branch if tms is supposed to be high
+    set pins 0                              ; set tms to low
+branch:
+    out pc, 5                               ; branch to clock or jtag
+
+public jtag:
+    out pins, 1 [1]             side 0b0    ; write tdo on a falling edge of tck
+    in pins, 1                  side 0b1    ; read tdi on a rising edge of tck
+    jmp x-- jtag
+    push                                    ; push the last bits
+.wrap

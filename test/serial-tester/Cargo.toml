@@ -1,0 +1,15 @@
+[package]
+name = "serial-test"
+version = "0.1.0"
+authors = [
+    "Jonathan Herbst <jonathan.herbst@grapple.systems>",
+    "Seth Pierson <seth.pierson@grapple.systems>",
+]
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+rand = "0.8.5"
+tokio = { version = "1.42", features = ["full"] }
+tokio-serial = "5.4"
