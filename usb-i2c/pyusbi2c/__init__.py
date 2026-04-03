@@ -76,6 +76,13 @@ class Device:
                 usb.util.endpoint_direction(e.bEndpointAddress) == \
                 usb.util.ENDPOINT_IN)
         
+        # read any packets that might still be in the buffer
+        try:
+            while True:
+                in_ep.read(64, 1)
+        except:
+            pass
+        
         return cls(out_ep, in_ep)
     
     def __init__(self, out_ep: usb.core.Endpoint, in_ep: usb.core.Endpoint):
