@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyusbi2c"
+version = "0.1.0"
+description = "USB to I2C utility for Grapple probe"
+requires-python = ">=3.9"
+license = { text = "MIT OR Apache-2.0" }
+authors = [{ name = "Grapple Systems LLC" }]
+dependencies = [
+  "dpkt>=1.9.8,<1.10.0",
+  "pyusb>=1.3.1,<1.4.0",
+]
+
+[tool.setuptools]
+packages = ["pyusbi2c"]
+
+[tool.setuptools.package-dir]
+pyusbi2c = "."
+
+[project.scripts]
+usbi2c = "pyusbi2c.cli:main"
