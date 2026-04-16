@@ -16,6 +16,7 @@ struct State {
     tvcc_mv: u32,
     uart_packets: u32,
     debug_commands: u32,
+    i2c_commands: u32,
     power_config: field::OwnedPowerControl,
 }
 
@@ -28,6 +29,7 @@ impl State {
             tvcc_mv: 0,
             uart_packets: 0,
             debug_commands: 0,
+            i2c_commands: 0,
             power_config: field::OwnedPowerControl::default(),
         }
     }
@@ -155,6 +157,35 @@ impl cmsis_dap::Reactor for CMSISDapReactor {
     }
 }
 
+struct WrappedI2C<'a, D: embassy_rp::i2c::Instance> {
+    inner: usb_i2c::rpi::I2CDevice<'a, D>,
+    state: embassy_sync::watch::DynSender<'a, State>,
+}
+
+impl<'a, D: embassy_rp::i2c::Instance> usb_i2c::I2CDevice for WrappedI2C<'a, D> {
+    fn configure(&mut self, freq_hz: u32) -> Result<(), Self::Error> {
+        self.inner.configure(freq_hz)
+    }
+}
+
+impl<'a, D: embassy_rp::i2c::Instance> embedded_hal_async::i2c::ErrorType for WrappedI2C<'a, D> {
+    type Error = <usb_i2c::rpi::I2CDevice<'a, D> as embedded_hal_async::i2c::ErrorType>::Error;
+}
+
+impl<'a, D> embedded_hal_async::i2c::I2c<embedded_hal_async::i2c::SevenBitAddress> for WrappedI2C<'a, D> where 
+D: embassy_rp::i2c::Instance
+{
+    async fn transaction(
+            &mut self,
+            address: embedded_hal_async::i2c::SevenBitAddress,
+            operations: &mut [embedded_hal_async::i2c::Operation<'_>],
+        ) -> Result<(), Self::Error> {
+        
+        self.state.send_modify(|s|{ s.as_mut().expect("no state").i2c_commands += 1; });
+        self.inner.transaction(address, operations).await
+    }
+}
+
 const SWO_BUFFER_SIZE: usize = 256;
 type Mutex = embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 
@@ -246,7 +277,8 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     let mut cmsis_dap = cmsis_dap::CMSISDapClass::new(&mut usb_builder, access_port, &mut cmsis_dap_state, &reactor, Some(swo_access));
     let vcom = embassy_usb::class::cdc_acm::CdcAcmClass::new(&mut usb_builder, &mut vcom_state, 64);
-    let mut i2c = i2c_usb.build(board.take_i2c(), &mut usb_builder);
+    let i2c = WrappedI2C { inner: board.take_i2c(), state: STATE.dyn_sender() };
+    let mut i2c = i2c_usb.build(i2c, &mut usb_builder);
     let mut usb = usb_builder.build();
 
     let usb_fut = usb.run();
@@ -352,7 +384,8 @@ async fn ui_task(mut led: grapple_probe::LED<'static>) {
 
         let activity = last_state.host_status != next_state.host_status ||
             last_state.debug_commands != next_state.debug_commands ||
-            last_state.uart_packets != next_state.uart_packets;
+            last_state.uart_packets != next_state.uart_packets ||
+            last_state.i2c_commands != next_state.i2c_commands;
 
         if activity && !led_blink {
             led.set(0, 0, 0);
