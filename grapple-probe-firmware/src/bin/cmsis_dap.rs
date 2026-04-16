@@ -181,7 +181,10 @@ D: embassy_rp::i2c::Instance
             operations: &mut [embedded_hal_async::i2c::Operation<'_>],
         ) -> Result<(), Self::Error> {
         
-        self.state.send_modify(|s|{ s.as_mut().expect("no state").i2c_commands += 1; });
+        self.state.send_modify(|s|{
+            let state = s.as_mut().expect("no state");
+            state.i2c_commands = state.i2c_commands.wrapping_add(1);
+        });
         self.inner.transaction(address, operations).await
     }
 }
