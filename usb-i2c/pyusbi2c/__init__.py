@@ -150,6 +150,9 @@ class SMBusDevice:
     
 def get_interface(dev: usb.Device, cfg: usb.Configuration) -> usb.Interface | None:
     for intf in cfg:
-        if usb.util.get_string(dev, intf.iInterface) == "Grapple I2C":
-            return intf
+        try:
+            if usb.util.get_string(dev, intf.iInterface) == "Grapple I2C":
+                return intf
+        except:
+            pass
     return None
