@@ -22,6 +22,7 @@ embassy-rp = { path = "../embassy/embassy-rp", features = ["unstable-pac", "time
 embassy-sync = { path = "../embassy/embassy-sync" }
 embassy-time = { path = "../embassy/embassy-time"}
 embassy-usb = { path = "../embassy/embassy-usb", features = ["defmt"]}
+embedded-hal-async = "1.0.0"
 embedded-io-async = "0.7.0"
 embedded-storage-async = "0.4.1"
 fixed = "1.28.0"

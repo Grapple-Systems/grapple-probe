@@ -878,6 +878,7 @@ dependencies = [
  "embassy-sync",
  "embassy-time",
  "embassy-usb",
+ "embedded-hal-async",
  "embedded-io-async",
  "embedded-storage-async",
  "fixed",
