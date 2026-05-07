@@ -62,7 +62,7 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(prog="USB I2C", description="Interact with a USB to I2C device")
     
-    subcommands = parser.add_subparsers(help="subcommand help")
+    subcommands = parser.add_subparsers(required=True, help="subcommand help")
 
     configure_cmd = subcommands.add_parser('c', help="configure the i2c bus")
     configure_cmd.add_argument('frequency', type=int, help="Frequency of the i2c bus in hz")
