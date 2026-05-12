@@ -23,9 +23,8 @@ jobs:
         sudo apt install -y libudev-dev
         cargo install elf2uf2-rs
 
-    - uses: Swatinem/rust-cache@v2
-
     - name: Build
+      uses: Swatinem/rust-cache@v2
       working-directory: ./grapple-probe-firmware
       run: |
         cargo build --release --verbose
@@ -45,12 +44,12 @@ jobs:
       with:
         submodules: true
 
-    - uses: Swatinem/rust-cache@v2
-
     - name: Run cmsis-dap tests
+      uses: Swatinem/rust-cache@v2
       working-directory: ./cmsis-dap
       run: cargo test --verbose
 
     - name: Run device-info tests
+      uses: Swatinem/rust-cache@v2
       working-directory: ./device-info
       run: cargo test --verbose
