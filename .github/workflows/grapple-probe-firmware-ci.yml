@@ -18,11 +18,21 @@ jobs:
         submodules: true
     
     - name: Install Rust
-      run: rustup target add thumbv6m-none-eabi
+      run: |
+        rustup target add thumbv6m-none-eabi
+        cargo install elf2uf2-rs
 
     - name: Build
       working-directory: ./grapple-probe-firmware
-      run: cargo build --release --verbose
+      run: |
+        cargo build --release --verbose
+        elf2uf2-rs target/thumbv6m-none-eabi/release/cmsisdap grapple-probe-fw.uf2
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: grapple-probe-fw
+        path: ./grapple-probe-firmware/grapple-probe-fw.uf2
 
   unit-test:
     runs-on: ubuntu-latest
