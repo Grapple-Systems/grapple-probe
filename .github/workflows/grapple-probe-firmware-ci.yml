@@ -10,7 +10,6 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -25,6 +24,18 @@ jobs:
       working-directory: ./grapple-probe-firmware
       run: cargo build --release --verbose
 
+  unit-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
     - name: Run cmsis-dap tests
       working-directory: ./cmsis-dap
+      run: cargo test --verbose
+
+    - name: Run device-info tests
+      working-directory: ./device-info
       run: cargo test --verbose
