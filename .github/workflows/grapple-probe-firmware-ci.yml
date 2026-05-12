@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v6git
       with:
         submodules: true
     
@@ -22,6 +22,8 @@ jobs:
         rustup target add thumbv6m-none-eabi
         sudo apt install -y libudev-dev
         cargo install elf2uf2-rs
+
+    - uses: Swatinem/rust-cache@v2
 
     - name: Build
       working-directory: ./grapple-probe-firmware
@@ -42,6 +44,8 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
+        
+    - uses: Swatinem/rust-cache@v2
 
     - name: Run cmsis-dap tests
       working-directory: ./cmsis-dap
