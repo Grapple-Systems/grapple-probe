@@ -1,0 +1,22 @@
+name: grapple-probe-firmware-ci
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Build
+      working-directory: ./grapple-probe-cli
+      run: cargo build --release --verbose
