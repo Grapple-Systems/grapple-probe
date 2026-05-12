@@ -1,4 +1,4 @@
-name: grapple-probe-firmware
+name: grapple-probe-firmware-ci
 
 on:
   pull_request:
@@ -19,11 +19,7 @@ jobs:
         submodules: true
     
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: thumbv6m-none-eabi
-        override: true
+      run: rustup target add thumbv6m-none-eabi
 
     - name: Build
       working-directory: ./grapple-probe-firmware
