@@ -1,0 +1,30 @@
+name: Grapple Probe CLI (Build and Test)
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner }}
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+
+    - name: Build
+      working-directory: ./grapple-probe/cli
+      run: cargo build --release --verbose --target ${{ inputs.target }}
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: grapple-probe-cli-${{ inputs.target }}
+        path: ./grapple-probe/cli/target/${{ inputs.target }}/release/grapple-probe-cli

@@ -1,0 +1,47 @@
+name: Grapple Probe Firmware (Build and Test)
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+    
+    - name: Install Rust
+      run: |
+        rustup target add thumbv6m-none-eabi
+        sudo apt install -y libudev-dev
+        cargo install elf2uf2-rs
+
+    - name: Build
+      working-directory: ./grapple-probe-firmware
+      run: |
+        cargo build --release --verbose
+        elf2uf2-rs target/thumbv6m-none-eabi/release/cmsisdap grapple-probe-fw.uf2
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: grapple-probe-fw
+        path: ./grapple-probe-firmware/grapple-probe-fw.uf2
+
+  unit-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+
+    - name: Run cmsis-dap tests
+      working-directory: ./cmsis-dap
+      run: cargo test --verbose
+
+    - name: Run device-info tests
+      working-directory: ./device-info
+      run: cargo test --verbose

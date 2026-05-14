@@ -1,4 +1,4 @@
-name: grapple-probe-cli-ci
+name: Grapple Probe CLI (CI)
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build-test:
     strategy:
       matrix:
         include:
@@ -23,19 +23,7 @@ jobs:
             runner: macos-latest
             target: aarch64-apple-darwin
 
-    runs-on: ${{ matrix.runner }}
-
-    steps:
-    - uses: actions/checkout@v6
-      with:
-        submodules: true
-
-    - name: Build
-      working-directory: ./grapple-probe/cli
-      run: cargo build --release --verbose --target ${{ matrix.target }}
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v7
-      with:
-        name: grapple-probe-cli-${{ matrix.name }}
-        path: ./grapple-probe/cli/target/${{ matrix.target }}/release/grapple-probe-cli
+    uses: ./grapple-probe-cli-build-test.yml
+    with:
+      runner: ${{ matrix.runner }}
+      target: ${{ matrix.target }}

@@ -1,0 +1,10 @@
+name: Grapple Probe Firmware (Release)
+
+on:
+  push:
+    tags:
+      - 'grapple-probe-firmware-v*'
+
+jobs:
+  build-test:
+    uses: ./grapple-probe-firmware-build-test.yml
