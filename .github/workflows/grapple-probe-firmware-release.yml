@@ -7,4 +7,4 @@ on:
 
 jobs:
   build-test:
-    uses: ./grapple-probe-firmware-build-test.yml
+    uses: ./.github/workflows/grapple-probe-firmware-build-test.yml
