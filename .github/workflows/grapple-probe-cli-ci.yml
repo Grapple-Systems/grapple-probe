@@ -22,7 +22,7 @@ jobs:
       with:
         path: |
           ~/.cargo/
-          grapple-probe/cli/target
+          grapple-probe/cli/target/
         key: ${{ runner.os }}-cargo-grapple-probe-cli-${{ hashFiles('grapple-probe/cli/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-grapple-probe-cli-

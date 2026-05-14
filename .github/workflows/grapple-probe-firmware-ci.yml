@@ -22,7 +22,7 @@ jobs:
       with:
         path: |
           ~/.cargo/
-          grapple-probe-firmware/target
+          grapple-probe-firmware/target/
         key: ${{ runner.os }}-cargo-grapple-probe-firmware-${{ hashFiles('grapple-probe-firmware/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-grapple-probe-firmware-
