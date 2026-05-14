@@ -16,14 +16,8 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
-
-    - name: Cache
-      uses: mozilla-actions/sccache-action@v0.0.10
     
     - name: Install Rust
-      env:
-        SCCACHE_GHA_ENABLED: "true"
-        RUSTC_WRAPPER: "sccache"
       run: |
         rustup target add thumbv6m-none-eabi
         sudo apt install -y libudev-dev
@@ -31,9 +25,6 @@ jobs:
 
     - name: Build
       working-directory: ./grapple-probe-firmware
-      env:
-        SCCACHE_GHA_ENABLED: "true"
-        RUSTC_WRAPPER: "sccache"
       run: |
         cargo build --release --verbose
         elf2uf2-rs target/thumbv6m-none-eabi/release/cmsisdap grapple-probe-fw.uf2
