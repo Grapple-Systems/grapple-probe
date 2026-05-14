@@ -16,6 +16,17 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
+
+    - name: Cache
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          grapple-probe-firmware/target
+        key: ${{ runner.os }}-cargo-grapple-probe-firmware-${{ hashFiles('**/Cargo.lock') }}
     
     - name: Install Rust
       run: |
@@ -24,7 +35,6 @@ jobs:
         cargo install elf2uf2-rs
 
     - name: Build
-      uses: Swatinem/rust-cache@v2
       working-directory: ./grapple-probe-firmware
       run: |
         cargo build --release --verbose
@@ -45,11 +55,9 @@ jobs:
         submodules: true
 
     - name: Run cmsis-dap tests
-      uses: Swatinem/rust-cache@v2
       working-directory: ./cmsis-dap
       run: cargo test --verbose
 
     - name: Run device-info tests
-      uses: Swatinem/rust-cache@v2
       working-directory: ./device-info
       run: cargo test --verbose
