@@ -4,7 +4,37 @@ on:
   push:
     tags:
       - 'grapple-probe-firmware-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-test:
     uses: ./.github/workflows/grapple-probe-firmware-build-test.yml
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build-test
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: grapple-probe-fw
+          path: firmware.uf2
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --draft \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
+      
+      - name: Upload Release Artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" firmware.uf2 --clobber
