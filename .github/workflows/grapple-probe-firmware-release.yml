@@ -19,6 +19,8 @@ jobs:
     needs: build-test
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
