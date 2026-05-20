@@ -25,7 +25,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: grapple-probe-fw
-          path: firmware.uf2
+          path: artifacts
 
       - name: Create Release
         env:
@@ -40,4 +40,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "${GITHUB_REF_NAME}" firmware.uf2 --clobber
+          gh release upload "${GITHUB_REF_NAME}" artifacts/grapple-probe-fw.uf2 --clobber
