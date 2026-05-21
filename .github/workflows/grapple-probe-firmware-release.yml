@@ -10,9 +10,12 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   build-test:
-    uses: ./.github/workflows/grapple-probe-firmware-build-test.yml
+    uses: ./.github/reusable/grapple-probe-firmware-build-test.yml
 
   release:
     runs-on: ubuntu-latest
@@ -31,13 +34,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
+          VERSION=$(tomlq '.package.version' grapple-probe-firmware/Cargo.toml)
+          gh release create "gpfw-${GITHUB_REF_NAME}" \
             --draft \
-            --title "${GITHUB_REF_NAME}" \
+            --title "Grapple Probe Firmware ${VERSION}" \
             --generate-notes
-      
-      - name: Upload Release Artifacts
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload "${GITHUB_REF_NAME}" artifacts/grapple-probe-fw.uf2 --clobber
+          cp artifacts/grapple-probe-fw.uf2 "artifacts/grapple-probe-firmware-${VERSION}.uf2"
+          gh release upload "gpfw-${GITHUB_REF_NAME}" "artifacts/grapple-probe-firmware-${VERSION}.uf2" --clobber

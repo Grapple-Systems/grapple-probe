@@ -1,0 +1,80 @@
+name: Grapple Probe CLI (Release)
+
+on:
+  pull_request:
+  push:
+    tags:
+      - 'grapple-probe-cli-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-test:
+    strategy:
+      matrix:
+        include:
+          - name: linux-x86-64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - name: linux-arm64
+            runner: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - name: windows-x86-64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+          - name: windows-arm64
+            runner: windows-latest
+            target: aarch64-pc-windows-msvc
+          - name: macos-x86-64
+            runner: macos-latest
+            target: x86_64-apple-darwin
+          - name: macos-arm64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+
+    uses: ./.github/reusable/grapple-probe-cli-build-test.yml
+    with:
+      runner: ${{ matrix.runner }}
+      target: ${{ matrix.target }}
+
+    
+  release:
+    runs-on: ubuntu-latest
+    needs: build-test
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(tomlq '.package.version' grapple-probe/cli/Cargo.toml)
+          gh release create "gpcli-${GITHUB_REF_NAME}" \
+            --draft \
+            --title "Grapple Probe CLI ${VERSION}" \
+            --generate-notes
+
+          for file in artifacts/*; do
+            ext=""
+            name="$file"
+
+            if [[ "$file" == *.* ]]; then
+              ext=".${file##*.}"
+              name="${file%.*}"
+            fi
+
+            mv "$file" "${name}_${VERSION}.${ext}"
+          done
+
+          gh release upload "gpcli-${GITHUB_REF_NAME}" "artifacts/*" --clobber

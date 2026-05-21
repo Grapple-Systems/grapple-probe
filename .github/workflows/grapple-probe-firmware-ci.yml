@@ -10,4 +10,4 @@ env:
 
 jobs:
   build-test:
-    uses: ./.github/workflows/grapple-probe-firmware-build-test.yml
+    uses: ./.github/reusable/grapple-probe-firmware-build-test.yml
