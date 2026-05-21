@@ -60,7 +60,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           sudo apt install -y yq
-          VERSION=$(tomlq '.package.version' grapple-probe/cli/Cargo.toml)
+          VERSION=$(tomlq -r '.package.version' grapple-probe/cli/Cargo.toml)
           gh release create "gpcli-${GITHUB_REF_NAME}" \
             --draft \
             --title "Grapple Probe CLI ${VERSION}" \

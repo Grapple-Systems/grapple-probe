@@ -35,7 +35,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           sudo apt install -y yq
-          VERSION=$(tomlq '.package.version' grapple-probe-firmware/Cargo.toml)
+          VERSION=$(tomlq -r '.package.version' grapple-probe-firmware/Cargo.toml)
           gh release create "gpfw-${GITHUB_REF_NAME}" \
             --draft \
             --title "Grapple Probe Firmware ${VERSION}" \
