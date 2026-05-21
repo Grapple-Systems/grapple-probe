@@ -21,7 +21,9 @@ jobs:
 
     - name: Build
       working-directory: ./grapple-probe/cli
-      run: cargo build --release --verbose --target ${{ inputs.target }}
+      run: |
+        rustup target add ${{ inputs.target }}
+        cargo build --release --verbose --target ${{ inputs.target }}
 
     - name: Upload Artifacts (windows)
       if: ${{ contains(inputs.target, 'windows') }}
