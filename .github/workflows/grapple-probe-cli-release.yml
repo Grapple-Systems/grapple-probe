@@ -65,8 +65,10 @@ jobs:
           for folder in artifacts/*; do
             if [ -f "$folder/grapple-probe-cli.exe" ]; then
               mv "$folder/grapple-probe-cli.exe" "$folder-${VERSION}.exe"
+              rm -r "$folder"
             else
               mv "$folder/grapple-probe-cli" "$folder-${VERSION}"
+              rm -r "$folder"
             fi
           done
 
