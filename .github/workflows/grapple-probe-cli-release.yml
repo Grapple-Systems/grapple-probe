@@ -37,7 +37,7 @@ jobs:
             runner: macos-latest
             target: aarch64-apple-darwin
 
-    uses: ./.github/reusable/grapple-probe-cli-build-test.yml
+    uses: ./.github/workflows/reusable/grapple-probe-cli-build-test.yml
     with:
       runner: ${{ matrix.runner }}
       target: ${{ matrix.target }}
