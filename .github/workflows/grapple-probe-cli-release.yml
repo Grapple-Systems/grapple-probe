@@ -61,21 +61,18 @@ jobs:
         run: |
           sudo apt install -y yq
           VERSION=$(tomlq -r '.package.version' grapple-probe/cli/Cargo.toml)
+
+          for folder in artifacts/*; do
+            if [ -f "$folder/grapple-probe-cli.exe" ]; then
+              mv "$folder/grapple-probe-cli.exe" "$folder-${VERSION}.exe"
+            else
+              mv "$folder/grapple-probe-cli" "$folder-${VERSION}"
+            fi
+          done
+
           gh release create "gpcli-${GITHUB_REF_NAME}" \
             --draft \
             --title "Grapple Probe CLI ${VERSION}" \
             --generate-notes
-
-          for file in artifacts/*; do
-            ext=""
-            name="$file"
-
-            if [[ "$file" == *.* ]]; then
-              ext=".${file##*.}"
-              name="${file%.*}"
-            fi
-
-            mv "$file" "${name}_${VERSION}.${ext}"
-          done
 
           gh release upload "gpcli-${GITHUB_REF_NAME}" "artifacts/*" --clobber
