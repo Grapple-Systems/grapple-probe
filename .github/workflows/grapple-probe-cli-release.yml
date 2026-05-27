@@ -60,7 +60,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           sudo apt install -y yq
-          VERSION=$(tomlq -r '.package.version' grapple-probe/cli/Cargo.toml)
+          VERSION=$(tomlq -r '.package.version' grapple-probe-cli/Cargo.toml)
 
           for folder in artifacts/*; do
             if [ -f "$folder/grapple-probe-cli.exe" ]; then
