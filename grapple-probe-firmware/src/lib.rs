@@ -73,7 +73,11 @@ pub struct Board {
 
 impl Board {
     pub fn open() -> Self {
-        let clk_config = embassy_rp::clocks::ClockConfig::system_freq(200_000_000).expect("couldn't get 200 MHz");
+        let clk_config_200_mhz = embassy_rp::clocks::ClockConfig::system_freq(200_000_000);
+        if clk_config_200_mhz.is_err() {
+            defmt::error!("failed to setup clock for 200 MHz");
+        }
+        let clk_config = clk_config_200_mhz.unwrap_or(embassy_rp::clocks::ClockConfig::default());
         let cfg = embassy_rp::config::Config::new(clk_config);
         let p = embassy_rp::init(cfg);
 
