@@ -208,6 +208,8 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     let mut board = grapple_probe::Board::open();
 
+    spawner.spawn(watchdog_task(board.take_watchdog()).expect("failed to spawn watchdog task"));
+
     let mut storage = board.take_storage();
     let maybe_power_config = storage.read(field::OwnedPowerControl::ID).await.ok().
         and_then(|data| field::PowerControl::try_parse(data).ok());
@@ -461,5 +463,14 @@ async fn power_task(mut cfg: PowerTaskConfig<'static>) {
                 state.tvcc_mv = sweep.tvcc_mv;
             }
         });
+    }
+}
+
+#[embassy_executor::task]
+async fn watchdog_task(mut watchdog: embassy_rp::watchdog::Watchdog) {
+    let mut timer = embassy_time::Ticker::every(embassy_time::Duration::from_millis(100));
+    loop {
+        timer.next().await;
+        watchdog.feed(embassy_time::Duration::from_millis(150));
     }
 }

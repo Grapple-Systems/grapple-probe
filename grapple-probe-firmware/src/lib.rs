@@ -17,7 +17,7 @@ pub use pwm_vreg::PWMVoltageRegulator;
 
 use {defmt_rtt as _, panic_probe as _};
 use embassy_rp::peripherals as periph;
-use embassy_rp::{dma, flash, gpio, i2c, uart, Peri, pwm};
+use embassy_rp::{dma, flash, gpio, i2c, uart, Peri, pwm, watchdog};
 use embassy_sync::mutex;
 
 pub type USBDriver<'a> = embassy_rp::usb::Driver<'a, periph::USB>;
@@ -68,6 +68,7 @@ pub struct Board {
     core1: Option<Peri<'static, periph::CORE1>>,
     eeprom: eeprom::M24C64<'static, periph::I2C0>,
     flash: Option<Flash<'static>>,
+    wd: Option<watchdog::Watchdog>,
 }
 
 impl Board {
@@ -75,6 +76,10 @@ impl Board {
         let clk_config = embassy_rp::clocks::ClockConfig::system_freq(200_000_000).expect("couldn't get 200 MHz");
         let cfg = embassy_rp::config::Config::new(clk_config);
         let p = embassy_rp::init(cfg);
+
+        let mut wd = watchdog::Watchdog::new(p.WATCHDOG);
+        wd.pause_on_debug(true);
+        wd.start(embassy_time::Duration::from_millis(500));
 
         let access_port = AccessPort {
             swd_token: mutex::Mutex::new(()),
@@ -126,6 +131,7 @@ impl Board {
             core1: Some(p.CORE1),
             eeprom: nvm,
             flash,
+            wd: Some(wd),
         }
     }
 
@@ -205,6 +211,10 @@ impl Board {
     pub fn take_storage(&mut self) -> Storage<'static> {
         let storage = self.flash.take().expect("flash already taken");
         Storage::new(storage, get_storage_range())
+    }
+
+    pub fn take_watchdog(&mut self) -> watchdog::Watchdog {
+        self.wd.take().expect("watchdog already taken")
     }
 }
 
