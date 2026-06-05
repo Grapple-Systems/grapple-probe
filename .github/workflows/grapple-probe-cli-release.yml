@@ -72,6 +72,10 @@ jobs:
             fi
           done
 
+          most_recent_tag="$(git describe --tags --abbrev=0 --match )"
+
+          scripts/generate_change_list.sh 
+
           gh release create "gpcli-${GITHUB_REF_NAME}" \
             --draft \
             --title "Grapple Probe CLI ${VERSION}" \

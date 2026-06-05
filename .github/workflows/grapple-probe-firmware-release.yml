@@ -1,10 +1,7 @@
-name: Grapple Probe Firmware (Release)
+name: Create Grapple Probe Firmware Release
 
 on:
   pull_request:
-  push:
-    tags:
-      - 'grapple-probe-firmware-v*'
   workflow_dispatch:
 
 permissions:
@@ -24,6 +21,36 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Get Version
+        id: version
+        run: |
+          sudo apt install -y yq
+          VERSION=$(tomlq -r '.package.version' grapple-probe-firmware/Cargo.toml)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=grapple-probe-firmware-v${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Generate Change Log
+        run: |
+          scripts/generate_change_list.sh grapple-probe-firmware grapple-probe-firmware grapple-probe usb-i2c cmsis-dap device-info > changelog.txt
+
+      - name: Create Tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if [ "${DRY_RUN}" = "true" ]; then
+            
+          else
+            if git rev-parse "$TAG" >/dev/null 2>&1; then
+              echo "Tag already exists: $TAG"
+              exit 1
+            fi
+
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -34,11 +61,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sudo apt install -y yq
-          VERSION=$(tomlq -r '.package.version' grapple-probe-firmware/Cargo.toml)
-          gh release create "gpfw-${GITHUB_REF_NAME}" \
+          VERSION="${{ steps.version.outputs.version }}"
+          gh release create "${{ steps.version.outputs.tag }}" \
             --draft \
             --title "Grapple Probe Firmware ${VERSION}" \
-            --generate-notes
+            --notes-file changelog.txt
           cp artifacts/grapple-probe-fw.uf2 "artifacts/grapple-probe-firmware-${VERSION}.uf2"
           gh release upload "gpfw-${GITHUB_REF_NAME}" "artifacts/grapple-probe-firmware-${VERSION}.uf2" --clobber
