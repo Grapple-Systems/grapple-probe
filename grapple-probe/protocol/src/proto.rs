@@ -12,6 +12,7 @@ pub enum Packet<B> {
     ReadFieldResponse(ReadFieldResponse<B>),
     WriteFieldRequest(WriteFieldRequest<B>),
     WriteFieldResponse(WriteFieldResponse<B>),
+    ResetRequest(ResetRequest<B>),
 }
 
 impl<B: AsRef<[u8]>> Packet<B> {
@@ -21,6 +22,7 @@ impl<B: AsRef<[u8]>> Packet<B> {
             Ok(PacketId::Status) => Ok(Self::GetStatusRequest(GetStatusRequest::try_from(base)?)),
             Ok(PacketId::ReadField) => Ok(Self::ReadFieldRequest(ReadFieldRequest::try_from(base)?)),
             Ok(PacketId::WriteField) => Ok(Self::WriteFieldRequest(WriteFieldRequest::try_from(base)?)),
+            Ok(PacketId::Reset) => Ok(Self::ResetRequest(ResetRequest::try_from(base)?)),
             _ => Err(Error::InvalidPacket)
         }
     }
@@ -61,6 +63,10 @@ packet!{pub WriteFieldResponse(PacketId::WriteField as u8) {
     field_id: uint8,
 }}
 
+packet!{pub ResetRequest(PacketId::Reset as u8) {
+    reset_type: uint8,
+}}
+
 pub struct StatusFlags {
     pub inner: u8,
 }
@@ -78,6 +84,12 @@ impl StatusFlags {
         let value = if value { 0x80 } else { 0 };
         self.inner = (self.inner & !0x80) | value;
     }
+}
+
+#[derive(num_enum::TryFromPrimitive)]
+#[repr(u8)]
+pub enum ResetType {
+    Panic = 255
 }
 
 struct BasePacket<B> {
@@ -141,4 +153,5 @@ enum PacketId {
     Status = 0,
     ReadField = 1,
     WriteField = 2,
+    Reset = 254,
 }

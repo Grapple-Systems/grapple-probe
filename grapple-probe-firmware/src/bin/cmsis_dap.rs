@@ -102,6 +102,14 @@ impl CMSISDapReactor {
         res.commit()
     }
 
+    fn reset(&self, req: &proto::ResetRequest<&[u8]>) -> usize {
+        match proto::ResetType::try_from(req.get_reset_type()) {
+            Ok(proto::ResetType::Panic) => panic!("intentional crash!!!"),
+            Err(e) => defmt::warn!("invalid reset type: {}", e.number),
+        };
+        0
+    }
+
     async fn store_field(id: u8, data: &[u8]) -> bool {
         let mut storage_guard = STORAGE.lock().await;
         let storage = storage_guard.as_mut().expect("storage is none");
@@ -140,6 +148,7 @@ impl cmsis_dap::Reactor for CMSISDapReactor {
             Ok(proto::Packet::GetStatusRequest(req)) => self.get_status(&req, response),
             Ok(proto::Packet::ReadFieldRequest(req)) => self.read_config(&req, response).await,
             Ok(proto::Packet::WriteFieldRequest(req)) => self.write_config(&req, response).await,
+            Ok(proto::Packet::ResetRequest(req)) => self.reset(&req),
             _ => {
                 defmt::warn!("unsupported packet");
                 response[0] = 0xFF;
