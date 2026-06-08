@@ -79,7 +79,7 @@ class Device:
         # read any packets that might still be in the buffer
         try:
             while True:
-                in_ep.read(64, 1)
+                in_ep.read(in_ep.wMaxPacketSize, 1)
         except:
             pass
         
@@ -89,6 +89,26 @@ class Device:
         self.out_ep = out_ep
         self.in_ep = in_ep
 
+    @property
+    def max_data_len(self):
+        return min(self.max_read_data_len, self.max_write_data_len, self.max_write_read_read_data_len, self.max_write_read_write_data_len)
+    
+    @property
+    def max_write_data_len(self):
+        return self.out_ep.wMaxPacketSize - proto.WriteRequest.HEADER_LEN
+    
+    @property
+    def max_write_read_write_data_len(self):
+        return self.out_ep.wMaxPacketSize - proto.WriteReadRequest.HEADER_LEN
+    
+    @property
+    def max_write_read_read_data_len(self):
+        return self.in_ep.wMaxPacketSize - proto.WriteReadResponse.HEADER_LEN
+    
+    @property
+    def max_read_data_len(self):
+        return self.in_ep.wMaxPacketSize - proto.ReadResponse.HEADER_LEN
+
     def configure(self, freq_hz: int) -> None:
         req = proto.ConfigureRequest(version = 0, freq_hz = freq_hz)
         res = self._command(req, proto.ConfigureResponse)
@@ -96,6 +116,9 @@ class Device:
             raise ErrorResponse.config_error(res.status)
     
     def write(self, address: int, data: bytes) -> None:
+        if len(data) > self.max_write_data_len:
+            raise ValueError("write data too big")
+
         req = proto.WriteRequest(address = address)
         req.data = data
         res = self._command(req, proto.WriteResponse)
@@ -103,6 +126,9 @@ class Device:
             raise ErrorResponse.operation_error(res.status)
 
     def read(self, address: int, len: int) -> bytes:
+        if len > self.max_read_data_len:
+            raise ValueError("read len too big")
+
         req = proto.ReadRequest(address = address, len = len)
         res = self._command(req, proto.ReadResponse)
         if res.status != 0:
@@ -110,6 +136,11 @@ class Device:
         return res.data
 
     def write_read(self, address: int, read_len: int, data: bytes) -> bytes:
+        if read_len > self.max_write_read_read_data_len:
+            raise ValueError("read len too big")
+        if len(data) > self.max_write_read_write_data_len:
+            raise ValueError("write buffer too big")
+
         req = proto.WriteReadRequest(address = address, read_len = read_len)
         req.data = data
         res = self._command(req, proto.WriteReadResponse)

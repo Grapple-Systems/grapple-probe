@@ -108,26 +108,40 @@ impl<'a, USB: embassy_usb::driver::Driver<'a>, D: I2CDevice> I2CUSBDevice<'a, US
         let mut res = req.try_alloc_response(res_buf).expect("couldn't allocate response");
 
         let address = i2c_address_from_protocol(req.get_address());
-        let data = &mut res.get_data_mut()[..req.get_len() as usize];
-        let status = match self.device.read(address, data).await {
-            Ok(()) => 0,
-            Err(_) => 1,
-        };
-        res.set_result(status);
-        res.commit(req.get_len() as usize)
+        let read_len = req.get_len() as usize;
+        if read_len <= res.get_data_mut().len() {
+            let data = &mut res.get_data_mut()[..read_len];
+            let status = match self.device.read(address, data).await {
+                Ok(()) => 0,
+                Err(_) => 1,
+            };
+            res.set_result(status);
+            res.commit(read_len)
+        } else {
+            defmt::warn!("detected read request with to much read {} bytes", req.get_len());
+            res.set_result(1);
+            res.commit(0)
+        }
     }
 
     async fn handle_write_read(&mut self, req: protocol::WriteReadRequest<&[u8]>, res_buf: &mut [u8]) -> usize {
         let mut res = req.try_alloc_response(res_buf).expect("couldn't allocate response");
 
         let address = i2c_address_from_protocol(req.get_address());
-        let write_data = &mut res.get_read_data_mut()[..req.get_read_len() as usize];
-        let status = match self.device.write_read(address, req.get_write_data(), write_data).await {
-            Ok(()) => 0,
-            Err(_) => 1,
-        };
-        res.set_result(status);
-        res.commit(req.get_read_len() as usize)
+        let read_len = req.get_read_len() as usize;
+        if read_len <= res.get_read_data_mut().len() {
+            let data = &mut res.get_read_data_mut()[..read_len];
+            let status = match self.device.write_read(address, req.get_write_data(), data).await {
+                Ok(()) => 0,
+                Err(_) => 1,
+            };
+            res.set_result(status);
+            res.commit(read_len)
+        } else {
+            defmt::warn!("detected write read request with to much read {} bytes", req.get_read_len());
+            res.set_result(1);
+            res.commit(0)
+        }
     }
 }
 

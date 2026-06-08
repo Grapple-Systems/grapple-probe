@@ -12,6 +12,7 @@ class _Header(dpkt.Packet):
     )
 
 class _Packet(dpkt.Packet):
+    HEADER_LEN = 2
     __byte_order__ = "<"
 
     def __init__(self, *args, **kwargs):
@@ -88,6 +89,7 @@ class ConfigureResponse(_Packet):
     ]
         
 class WriteRequest(_Packet):
+    HEADER_LEN = _Packet.HEADER_LEN + 2
     _type = 0x01
     __hdr__ = [
         ("address", "H", None),
@@ -108,6 +110,7 @@ class ReadRequest(_Packet):
     ]
 
 class ReadResponse(_Packet):
+    HEADER_LEN = _Packet.HEADER_LEN + 1
     _type = 0x02
     __hdr__ = [
         ("status", "B", None),
@@ -115,6 +118,7 @@ class ReadResponse(_Packet):
     ]
 
 class WriteReadRequest(_Packet):
+    HEADER_LEN = _Packet.HEADER_LEN + 3
     _type = 0x03
     __hdr__ = [
         ("address", "H", None),
@@ -123,6 +127,7 @@ class WriteReadRequest(_Packet):
     ]
 
 class WriteReadResponse(_Packet):
+    HEADER_LEN = _Packet.HEADER_LEN + 1
     _type = 0x03
     __hdr__ = [
         ("status", "B", None),
