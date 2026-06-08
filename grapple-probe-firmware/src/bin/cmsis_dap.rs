@@ -102,6 +102,14 @@ impl CMSISDapReactor {
         res.commit()
     }
 
+    fn reset(&self, req: &proto::ResetRequest<&[u8]>) -> usize {
+        match proto::ResetType::try_from(req.get_reset_type()) {
+            Ok(proto::ResetType::Panic) => panic!("intentional crash!!!"),
+            Err(e) => defmt::warn!("invalid reset type: {}", e.number),
+        };
+        0
+    }
+
     async fn store_field(id: u8, data: &[u8]) -> bool {
         let mut storage_guard = STORAGE.lock().await;
         let storage = storage_guard.as_mut().expect("storage is none");
@@ -140,6 +148,7 @@ impl cmsis_dap::Reactor for CMSISDapReactor {
             Ok(proto::Packet::GetStatusRequest(req)) => self.get_status(&req, response),
             Ok(proto::Packet::ReadFieldRequest(req)) => self.read_config(&req, response).await,
             Ok(proto::Packet::WriteFieldRequest(req)) => self.write_config(&req, response).await,
+            Ok(proto::Packet::ResetRequest(req)) => self.reset(&req),
             _ => {
                 defmt::warn!("unsupported packet");
                 response[0] = 0xFF;
@@ -198,6 +207,8 @@ async fn main(spawner: embassy_executor::Spawner) {
     use field::Field;
 
     let mut board = grapple_probe::Board::open();
+
+    spawner.spawn(watchdog_task(board.take_watchdog()).expect("failed to spawn watchdog task"));
 
     let mut storage = board.take_storage();
     let maybe_power_config = storage.read(field::OwnedPowerControl::ID).await.ok().
@@ -452,5 +463,14 @@ async fn power_task(mut cfg: PowerTaskConfig<'static>) {
                 state.tvcc_mv = sweep.tvcc_mv;
             }
         });
+    }
+}
+
+#[embassy_executor::task]
+async fn watchdog_task(mut watchdog: embassy_rp::watchdog::Watchdog) {
+    let mut timer = embassy_time::Ticker::every(embassy_time::Duration::from_millis(100));
+    loop {
+        timer.next().await;
+        watchdog.feed(embassy_time::Duration::from_millis(150));
     }
 }

@@ -17,6 +17,8 @@
 use grapple_probe_proto::{field, proto};
 use nusb::MaybeFuture;
 
+pub use proto::ResetType;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
     PermissionDenied,
@@ -179,6 +181,15 @@ impl GrappleProbeDebug {
         } else {
             Err(Error::Timeout)
         }
+    }
+
+    pub fn reset(&mut self, reset_type: ResetType) -> Result<(), Error> {
+        let mut buf = [0u8; 64];
+        let mut req = proto::ResetRequest::try_alloc(&mut buf).expect("buffer not big enough");
+        req.set_reset_type(reset_type as u8);
+        let len = req.commit();
+
+        self.request(&mut buf, len).and(Ok(()))
     }
 
     fn request<'a>(&mut self, buf: &'a mut [u8], req_len: usize) -> Result<proto::Packet<&'a [u8]>, Error> {

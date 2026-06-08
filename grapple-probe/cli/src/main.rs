@@ -30,6 +30,10 @@ enum Commands {
 
     /// Write raw configuration fields
     WriteConfig(WriteConfigArgs),
+
+    // Force the probe to panic
+    #[command(hide=true)]
+    Panic,
 }
 
 #[derive(Debug, clap::Args)]
@@ -197,6 +201,15 @@ fn write_field(probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs
     }
 }
 
+fn panic(mut probes: impl Iterator<Item = GrappleProbe>) {
+    if let Some(probe) = probes.next() {
+        if let Ok(mut dap) = probe.open_cmsis_dap() {
+            println!("resetting: {}", probe.get_serial_number());
+            let _ = dap.reset(grapple_probe_lib::ResetType::Panic);
+        }
+    }
+}
+
 fn main() {
     use clap::Parser;
 
@@ -212,5 +225,6 @@ fn main() {
         Commands::PowerControl(args) => power_control(probes, args),
         Commands::ReadConfig(args) => read_field(probes, args),
         Commands::WriteConfig(args) => write_field(probes, args),
+        Commands::Panic => panic(probes),
     }
 }
