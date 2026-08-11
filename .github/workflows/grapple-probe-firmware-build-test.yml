@@ -15,6 +15,7 @@ jobs:
     - name: Install Rust
       run: |
         rustup target add thumbv6m-none-eabi
+        sudo apt update
         sudo apt install -y libudev-dev
         cargo install elf2uf2-rs
 

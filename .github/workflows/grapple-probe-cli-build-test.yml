@@ -21,7 +21,9 @@ jobs:
     
     - name: Install Arm GCC (ubuntu)
       if: contains(inputs.runner, 'ubuntu') && inputs.target == 'aarch64-unknown-linux-gnu'
-      run: sudo apt install -y gcc-aarch64-linux-gnu
+      run: |
+        sudo apt update
+        sudo apt install -y gcc-aarch64-linux-gnu
 
     - name: Build
       working-directory: ./grapple-probe-cli
