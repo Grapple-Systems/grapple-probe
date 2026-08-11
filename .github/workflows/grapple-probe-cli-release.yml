@@ -1,7 +1,6 @@
 name: Grapple Probe CLI (Release)
 
 on:
-  pull_request:
   push:
     tags:
       - 'grapple-probe-cli-v*'
@@ -72,13 +71,8 @@ jobs:
             fi
           done
 
-          most_recent_tag="$(git describe --tags --abbrev=0 --match )"
-
-          scripts/generate_change_list.sh 
-
           gh release create "gpcli-${GITHUB_REF_NAME}" \
             --draft \
-            --title "Grapple Probe CLI ${VERSION}" \
-            --generate-notes
+            --title "Grapple Probe CLI ${VERSION}"
 
           gh release upload "gpcli-${GITHUB_REF_NAME}" "artifacts/*" --clobber
