@@ -10,5 +10,5 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 hex = "0.4.3"
-grapple-probe-lib = { path = ".." }
+grapple-probe-lib = { path = "../grapple-probe" }
 clap = { version = "4.5.54", features = ["derive"] }

@@ -1,0 +1,13 @@
+name: Grapple Probe Firmware CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-test:
+    uses: ./.github/workflows/grapple-probe-firmware-build-test.yml
