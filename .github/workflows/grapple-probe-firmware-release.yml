@@ -1,6 +1,8 @@
-name: Create Grapple Probe Firmware Release
+name: Grapple Probe Firmware Release
 
 on:
+  pull_request:
+    branches: [ "main" ]
   push:
     tags:
       - 'grapple-probe-firmware-v*'

@@ -1,6 +1,8 @@
 name: Grapple Probe CLI (Release)
 
 on:
+  pull_request:
+    branches: [ "main" ]
   push:
     tags:
       - 'grapple-probe-cli-v*'
