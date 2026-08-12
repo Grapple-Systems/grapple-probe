@@ -1,4 +1,4 @@
-name: Grapple Probe Firmware (CI)
+name: Grapple Probe Firmware CI
 
 on:
   pull_request:

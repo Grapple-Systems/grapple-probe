@@ -1,4 +1,4 @@
-name: Grapple Probe CLI (CI)
+name: Grapple Probe CLI CI
 
 on:
   pull_request:

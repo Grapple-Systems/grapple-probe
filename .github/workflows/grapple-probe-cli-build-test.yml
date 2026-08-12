@@ -1,4 +1,4 @@
-name: Grapple Probe CLI (Build and Test)
+name: Grapple Probe CLI Build and Test
 
 on:
   workflow_call:
