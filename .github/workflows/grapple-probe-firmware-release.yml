@@ -37,8 +37,8 @@ jobs:
         run: |
           sudo apt install -y yq
           VERSION=$(tomlq -r '.package.version' grapple-probe-firmware/Cargo.toml)
-          gh release create "${{ github.ref }}" \
+          gh release create "gpfw-${{ github.ref }}" \
             --draft \
             --title "Grapple Probe Firmware ${VERSION}"
           cp artifacts/grapple-probe-fw.uf2 "artifacts/grapple-probe-firmware-${VERSION}.uf2"
-          gh release upload "gpfw-${GITHUB_REF_NAME}" "artifacts/grapple-probe-firmware-${VERSION}.uf2" --clobber
+          gh release upload "gpfw-${{ github.ref }}" "artifacts/grapple-probe-firmware-${VERSION}.uf2" --clobber

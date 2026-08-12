@@ -73,8 +73,8 @@ jobs:
             fi
           done
 
-          gh release create "gpcli-${GITHUB_REF_NAME}" \
+          gh release create "gpcli-${{ github.ref }}" \
             --draft \
             --title "Grapple Probe CLI ${VERSION}"
 
-          gh release upload "gpcli-${GITHUB_REF_NAME}" "artifacts/*" --clobber
+          gh release upload "gpcli-${{ github.ref }}" "artifacts/*" --clobber
