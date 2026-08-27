@@ -367,8 +367,8 @@ async fn usb_uart<'a>(mut vcom: embassy_usb::class::cdc_acm::CdcAcmClass<'a, gra
             USBUartCommand::Write(num_bytes) => uart.write_all(&rx_buffer[..num_bytes]).await.expect("failed to write to uart"),
             USBUartCommand::LineEncoding => {
                 if line_coding != usb_receiver.line_coding() {
-                    defmt::info!("usb uart line coding change: {} baud", usb_receiver.line_coding().data_rate());
                     line_coding = usb_receiver.line_coding();
+                    defmt::info!("usb uart line coding change: {} baud, data bits: {}, stop bits: {}, parity: {}", line_coding.data_rate(), line_coding.data_bits(), line_coding.stop_bits(), line_coding.parity_type());
                     let mut config = embassy_rp::uart::Config::default();
                     config.baudrate = line_coding.data_rate();
                     config.data_bits = match line_coding.data_bits() {
