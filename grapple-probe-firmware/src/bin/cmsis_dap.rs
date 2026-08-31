@@ -368,13 +368,9 @@ async fn usb_uart<'a>(mut vcom: embassy_usb::class::cdc_acm::CdcAcmClass<'a, gra
             USBUartCommand::LineEncoding => {
                 if line_coding != usb_receiver.line_coding() {
                     line_coding = usb_receiver.line_coding();
-                    defmt::info!("usb uart line coding change: {} baud, data bits: {}, stop bits: {}, parity: {}", line_coding.data_rate(), line_coding.data_bits(), line_coding.stop_bits(), line_coding.parity_type());
+                    defmt::info!("usb uart line coding change: {} baud, stop bits: {}, parity: {}", line_coding.data_rate(), line_coding.stop_bits(), line_coding.parity_type());
                     let mut config = embassy_rp::uart::Config::default();
                     config.baudrate = line_coding.data_rate();
-                    config.data_bits = match line_coding.data_bits() {
-                        7 => embassy_rp::uart::DataBits::DataBits7,
-                        _ => embassy_rp::uart::DataBits::DataBits8,
-                    };
                     config.parity = match line_coding.parity_type() {
                         embassy_usb::class::cdc_acm::ParityType::Even => embassy_rp::uart::Parity::ParityEven,
                         embassy_usb::class::cdc_acm::ParityType::Odd => embassy_rp::uart::Parity::ParityOdd,
