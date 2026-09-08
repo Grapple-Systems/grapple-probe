@@ -332,6 +332,7 @@ async fn usb_uart<'a>(mut vcom: embassy_usb::class::cdc_acm::CdcAcmClass<'a, gra
     let (mut usb_sender, mut usb_receiver, control_changed) = vcom.split_with_control();
     let mut rx_buffer = [0u8; 64];
     let mut tx_buffer = [0u8; 64];
+    let mut line_coding = usb_receiver.line_coding();
     loop {
         let usb_fut = usb_receiver.read_packet(&mut rx_buffer);
         let uart_fut = uart.read(&mut tx_buffer);
@@ -359,14 +360,28 @@ async fn usb_uart<'a>(mut vcom: embassy_usb::class::cdc_acm::CdcAcmClass<'a, gra
                 }
                 USBUartCommand::Retry
             },
-            embassy_futures::select::Either3::Third(()) => USBUartCommand::LineEncoding,
+            embassy_futures::select::Either3::Third(()) => USBUartCommand::LineEncoding
         };
 
         match command {
             USBUartCommand::Write(num_bytes) => uart.write_all(&rx_buffer[..num_bytes]).await.expect("failed to write to uart"),
             USBUartCommand::LineEncoding => {
-                defmt::info!("usb uart line coding change: {} baud", usb_receiver.line_coding().data_rate());
-                uart.set_baudrate(usb_receiver.line_coding().data_rate())
+                if line_coding != usb_receiver.line_coding() {
+                    line_coding = usb_receiver.line_coding();
+                    defmt::info!("usb uart line coding change: {} baud, stop bits: {}, parity: {}", line_coding.data_rate(), line_coding.stop_bits(), line_coding.parity_type());
+                    let mut config = embassy_rp::uart::Config::default();
+                    config.baudrate = line_coding.data_rate();
+                    config.parity = match line_coding.parity_type() {
+                        embassy_usb::class::cdc_acm::ParityType::Even => embassy_rp::uart::Parity::ParityEven,
+                        embassy_usb::class::cdc_acm::ParityType::Odd => embassy_rp::uart::Parity::ParityOdd,
+                        _ => embassy_rp::uart::Parity::ParityNone,
+                    };
+                    config.stop_bits = match line_coding.stop_bits() {
+                        embassy_usb::class::cdc_acm::StopBits::Two => embassy_rp::uart::StopBits::STOP2,
+                        _ => embassy_rp::uart::StopBits::STOP1,
+                    };
+                    uart.set_config(config)
+                }
             },
             USBUartCommand::Reconnect => usb_receiver.wait_connection().await,
             USBUartCommand::Retry => (),
