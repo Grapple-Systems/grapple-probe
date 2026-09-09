@@ -1,3 +1,8 @@
+// Copyright (c) 2025 Grapple Systems LLC, All rights reserved.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Created to replicate https://github.com/Grapple-Systems/grapple-probe/issues/30
+
 #![no_std]
 #![no_main]
 
@@ -15,7 +20,10 @@ async fn main(_spawner: embassy_executor::Spawner) {
     ap.set_frequency(100_000);
     assert!(ap.open());
 
+    // these are the request bytes that caused the issue
     //[20, 12, 65, 0, 65, 0, 65, 0, 1, 0, 65, 0, 1, 0, 1, 0, 128, 255, 255, 255, 255, 255, 255, 255, 255, 128, 255, 255, 255, 255, 255, 255, 255, 255, 128, 255, 255, 255, 255, 255, 255, 255, 255, 128, 255, 255, 255, 255, 255, 255, 255, 255, 128, 255, 255, 255, 255, 255, 255, 255, 255]
+
+    // turns out these aren't needed to replicate the problem
     // assert!(ap.transfer(1, true, &[0], &mut []));
     // assert!(ap.transfer(1, true, &[0], &mut []));
     // assert!(ap.transfer(1, true, &[0], &mut []));
