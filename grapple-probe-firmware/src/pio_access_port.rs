@@ -639,7 +639,6 @@ impl<'a, PIO: pio::Instance> JTAG<'a, PIO> {
             let mut chunk = [0u8; 4];
             chunk[..end_i - i].copy_from_slice(&data[i..end_i]);
             block_on(tx.wait_push(u32::from_le_bytes(chunk)));
-            defmt::debug!("pushing chunk to swj sequence");
         }
         while !tx.empty() {}
     }
@@ -653,7 +652,6 @@ impl<'a, PIO: pio::Instance> JTAG<'a, PIO> {
         let tdi = &tdi[..num_bytes];
         let tdo = if tdo.len() == 0 { tdo } else { &mut tdo[..num_bytes] };
 
-        //self.pio.sm0.clear_fifos();
         let (rx, tx) = self.pio.sm0.rx_tx();
         let tms = if tms { 1 } else { 0 } << 26;
         let command = (num_bits - 1) & 0x03FFFFFF | tms | ((self.jtag_address as u32) << 27);
