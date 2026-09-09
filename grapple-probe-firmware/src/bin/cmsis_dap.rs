@@ -208,7 +208,7 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     let mut board = grapple_probe::Board::open();
 
-    //spawner.spawn(watchdog_task(board.take_watchdog()).expect("failed to spawn watchdog task"));
+    spawner.spawn(watchdog_task(board.take_watchdog()).expect("failed to spawn watchdog task"));
 
     let mut storage = board.take_storage();
     let maybe_power_config = storage.read(field::OwnedPowerControl::ID).await.ok().
@@ -483,12 +483,9 @@ async fn power_task(mut cfg: PowerTaskConfig<'static>) {
 
 #[embassy_executor::task]
 async fn watchdog_task(mut watchdog: embassy_rp::watchdog::Watchdog) {
-    let mut timer = embassy_time::Ticker::every(embassy_time::Duration::from_millis(100));
     loop {
-        //timer.next().await;
-        defmt::debug!("feed watchdog");
-        watchdog.feed(embassy_time::Duration::from_millis(150));
-        defmt::debug!("watchdog fed");
+        defmt::debug!("feeding watchdog");
+        watchdog.feed(embassy_time::Duration::from_millis(100));
         embassy_time::Timer::after_millis(50).await;
     }
 }
