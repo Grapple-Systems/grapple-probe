@@ -83,7 +83,7 @@ impl Board {
 
         let mut wd = watchdog::Watchdog::new(p.WATCHDOG);
         wd.pause_on_debug(true);
-        wd.start(embassy_time::Duration::from_millis(500));
+        //wd.start(embassy_time::Duration::from_millis(500));
 
         let access_port = AccessPort {
             swd_token: mutex::Mutex::new(()),

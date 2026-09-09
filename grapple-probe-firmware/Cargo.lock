@@ -573,6 +573,7 @@ version = "0.5.1"
 dependencies = [
  "cfg-if",
  "critical-section",
+ "defmt",
  "document-features",
  "embassy-time-driver",
  "embedded-hal 0.2.7",

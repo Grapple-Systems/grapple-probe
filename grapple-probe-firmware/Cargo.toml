@@ -7,6 +7,7 @@ authors = [
 ]
 edition = "2021"
 license = "GPL-3.0-or-later"
+default-run = "cmsisdap"
 
 [dependencies]
 bbqueue = { version = "0.5.1", features = ["thumbv6"] }
@@ -20,7 +21,7 @@ embassy-executor = { path = "../embassy/embassy-executor", features = ["platform
 embassy-futures = { path = "../embassy/embassy-futures" }
 embassy-rp = { path = "../embassy/embassy-rp", features = ["unstable-pac", "time-driver", "rp2040", "defmt"] }
 embassy-sync = { path = "../embassy/embassy-sync" }
-embassy-time = { path = "../embassy/embassy-time"}
+embassy-time = { path = "../embassy/embassy-time", features = ["defmt", "defmt-timestamp-uptime"]}
 embassy-usb = { path = "../embassy/embassy-usb", features = ["defmt"]}
 embedded-hal-async = "1.0.0"
 embedded-io-async = "0.7.0"
@@ -38,6 +39,10 @@ usb-i2c = { path = "../usb-i2c" }
 [[bin]]
 name = "cmsisdap"
 path = "src/bin/cmsis_dap.rs"
+
+[[bin]]
+name = "esp32c3_crash"
+path = "src/tests/esp32c3_crash.rs"
 
 [profile.release]
 codegen-units = 1
