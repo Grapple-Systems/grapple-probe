@@ -784,6 +784,10 @@ impl<'a, PIO: pio::Instance> SWD<'a, PIO> {
             let bits = (num_bits - i as u32 * 8).min(32);
             data[i..end_i].copy_from_slice(&(word >> (32 - bits)).to_le_bytes()[..end_i - i]);
         }
+        if num_bits & 0x1F == 0 {
+            // if we sent a multple of 32 bits, there's an extra pull.
+            let _ = block_on(rx.wait_pull());
+        }
     }
 }
 

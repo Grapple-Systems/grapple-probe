@@ -44,6 +44,10 @@ path = "src/bin/cmsis_dap.rs"
 name = "esp32c3_crash"
 path = "src/tests/esp32c3_crash.rs"
 
+[[bin]]
+name = "swd_pio_tests"
+path = "src/tests/swd_pio_tests.rs"
+
 [profile.release]
 codegen-units = 1
 debug = 2
