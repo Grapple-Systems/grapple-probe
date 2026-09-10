@@ -406,7 +406,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     fn handle_jtag_sequence(&mut self, command: &proto::JTAGSequenceCommand<&[u8]>, response: &mut [u8]) -> usize {
         let mut response = proto::JTAGSequenceResponse::try_alloc(response).expect("couldn't allocate jtag sequence response");
         
-        defmt::debug!("jtag sequence");
+        defmt::debug!("jtag sequence started");
 
         self.reactor.activity();
         let mut tdo_idx = 0;
