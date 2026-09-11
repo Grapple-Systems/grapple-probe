@@ -483,9 +483,9 @@ async fn power_task(mut cfg: PowerTaskConfig<'static>) {
 
 #[embassy_executor::task]
 async fn watchdog_task(mut watchdog: embassy_rp::watchdog::Watchdog) {
-    let mut timer = embassy_time::Ticker::every(embassy_time::Duration::from_millis(100));
     loop {
-        timer.next().await;
-        watchdog.feed(embassy_time::Duration::from_millis(150));
+        defmt::debug!("feeding watchdog");
+        watchdog.feed(embassy_time::Duration::from_millis(100));
+        embassy_time::Timer::after_millis(50).await;
     }
 }

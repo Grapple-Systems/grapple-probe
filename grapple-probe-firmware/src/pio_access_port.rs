@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use cmsis_dap::{JTAGAccessPort, SWDAccessPort, SWJAccessPort, SWOPort};
+use embassy_futures::block_on;
 use embassy_rp::{gpio, pio, Peri, uart};
 use embassy_rp::clocks::clk_sys_freq;
 use embassy_rp::interrupt::typelevel::Binding;
@@ -597,6 +598,8 @@ impl<'a, PIO: pio::Instance> JTAG<'a, PIO> {
         unsafe { pio.sm0.exec_jmp(idle_address) };
         pio.sm0.set_enable(true);
 
+        defmt::debug!("enabling jtag");
+
         Self {
             _tokens: tokens,
             pio,
@@ -620,50 +623,56 @@ impl<'a, PIO: pio::Instance> JTAG<'a, PIO> {
     }
 
     pub fn swj_sequence(&mut self, num_bits: u32, tms: &[u8]) {
+        assert!(self.pio.sm0.rx().empty());
+        assert!(self.pio.sm0.tx().empty());
+        assert!(tms.len() == ((num_bits + 7) / 8) as usize);
+
         let (num_bits, num_bytes) = truncate(num_bits, tms.len());
         let data = &tms[..num_bytes];
 
         let tx = self.pio.sm0.tx();
         let command = (num_bits - 1) & 0x03FFFFFF | ((self.swj_address as u32) << 27);
-        while tx.full() {}
-        tx.push(command);
+        block_on(tx.wait_push(command));
 
         for i in (0..data.len()).step_by(4) {
             let end_i = data.len().min(i+4);
             let mut chunk = [0u8; 4];
             chunk[..end_i - i].copy_from_slice(&data[i..end_i]);
-            while tx.full() {}
-            tx.push(u32::from_le_bytes(chunk));
+            block_on(tx.wait_push(u32::from_le_bytes(chunk)));
         }
+        while !tx.empty() {}
     }
 
     pub fn transfer(&mut self, num_bits: u32, tms: bool, tdi: &[u8], tdo: &mut [u8]) {
+        assert!(self.pio.sm0.rx().empty());
+        assert!(self.pio.sm0.tx().empty());
         assert!(tdo.len() == 0 || tdi.len() == tdo.len());
 
         let (num_bits, num_bytes) = truncate(num_bits, tdi.len());
         let tdi = &tdi[..num_bytes];
         let tdo = if tdo.len() == 0 { tdo } else { &mut tdo[..num_bytes] };
 
-        self.pio.sm0.clear_fifos();
         let (rx, tx) = self.pio.sm0.rx_tx();
         let tms = if tms { 1 } else { 0 } << 26;
         let command = (num_bits - 1) & 0x03FFFFFF | tms | ((self.jtag_address as u32) << 27);
-        while tx.full() {}
-        tx.push(command);
+        block_on(tx.wait_push(command));
 
         for i in (0..tdi.len()).step_by(4) {
             let end_i = tdi.len().min(i+4);
             let mut chunk = [0u8; 4];
             chunk[..end_i - i].copy_from_slice(&tdi[i..end_i]);
-            while tx.full() {}
-            tx.push(u32::from_le_bytes(chunk));
+            block_on(tx.wait_push(u32::from_le_bytes(chunk)));
 
             while rx.empty() {}
-            let word = rx.pull();
+            let word = block_on(rx.wait_pull());
             if tdo.len() > 0 {
                 let bits = (num_bits - i as u32 * 8).min(32);
                 tdo[i..end_i].copy_from_slice(&(word >> (32 - bits)).to_le_bytes()[..end_i - i]);
             }
+        }
+        if num_bits & 0x1F == 0 {
+            // if we sent a multple of 32 bits, there's an extra pull.
+            let _ = block_on(rx.wait_pull());
         }
     }
 }
@@ -751,15 +760,13 @@ impl<'a, PIO: pio::Instance> SWD<'a, PIO> {
 
         let tx = self.pio.sm0.tx();
         let command = ((num_bits - 1) & 0x07FFFFFF) | ((self.addr.1 as u32) << 27);
-        while tx.full() {}
-        tx.push(command);
+        block_on(tx.wait_push(command));
 
         for i in (0..data.len()).step_by(4) {
             let end_i = data.len().min(i+4);
             let mut chunk = [0u8; 4];
             chunk[..end_i - i].copy_from_slice(&data[i..end_i]);
-            while tx.full() {}
-            tx.push(u32::from_le_bytes(chunk));
+            block_on(tx.wait_push(u32::from_le_bytes(chunk)));
         }
     }
 
@@ -769,15 +776,17 @@ impl<'a, PIO: pio::Instance> SWD<'a, PIO> {
 
         let (rx, tx) = self.pio.sm0.rx_tx();
         let command = ((num_bits - 1) & 0x07FFFFFF) | ((self.addr.2 as u32) << 27);
-        while tx.full() {}
-        tx.push(command);
+        block_on(tx.wait_push(command));
 
         for i in (0..data.len()).step_by(4) {
-            while rx.empty() {}
-            let word = rx.pull();
+            let word = block_on(rx.wait_pull());
             let end_i = data.len().min(i+4);
             let bits = (num_bits - i as u32 * 8).min(32);
             data[i..end_i].copy_from_slice(&(word >> (32 - bits)).to_le_bytes()[..end_i - i]);
+        }
+        if num_bits & 0x1F == 0 {
+            // if we sent a multple of 32 bits, there's an extra pull.
+            let _ = block_on(rx.wait_pull());
         }
     }
 }
@@ -807,85 +816,3 @@ impl<'a, P: cmsis_dap::SWOPort> cmsis_dap::SWOPort for WrappedUartSWO<'a, P> {
         self.inner.close()
     }
 }
-
-// pub struct SWO<'a, PIO: pio::Instance> {
-//     pio: pio::Pio<'a, PIO>,
-//     uart_cfg: pio::Config<'a, PIO>,
-//     manchester_cfg: pio::Config<'a, PIO>,
-// }
-
-// impl<'a, PIO: pio::Instance> SWO<'a, PIO> {
-//     pub fn new(
-//         pio: Peri<'a, PIO>,
-//         irq: impl Binding<PIO::Interrupt, InterruptHandler<PIO>>,
-//         pin: Peri<'a, impl pio::PioPin + 'a>,
-//     ) -> Self {
-//         let mut pio = pio::Pio::new(pio, irq);
-//         let swo_pin = pio.common.make_pio_pin(pin);
-
-//         let uart_prog = pio::program::pio_file!("src/uart_rx.pio", select_program("uart_rx"));
-//         let uart_prog = pio.common.load_program(&uart_prog.program);
-//         let manchester_prog = pio::program::pio_file!("src/manchester_encoding.pio", select_program("manchester_rx"));
-//         let manchester_prog = pio.common.load_program(&manchester_prog.program);
-
-//         let mut uart_cfg = pio::Config::default();
-//         uart_cfg.use_program(&uart_prog, &[]);
-//         uart_cfg.set_in_pins(&[&swo_pin]);
-//         uart_cfg.set_jmp_pin(&swo_pin);
-//         uart_cfg.fifo_join = pio::FifoJoin::RxOnly;
-
-//         let mut manchester_cfg = pio::Config::default();
-//         manchester_cfg.use_program(&manchester_prog, &[]);
-//         manchester_cfg.set_in_pins(&[&swo_pin]);
-//         manchester_cfg.set_jmp_pin(&swo_pin);
-//         manchester_cfg.fifo_join = pio::FifoJoin::RxOnly;
-
-//         pio.sm0.set_pin_dirs(pio::Direction::In, &[&swo_pin]);
-
-//         Self { pio, uart_cfg, manchester_cfg }
-//     }
-
-//     pub fn set_mode_uart(&mut self, baudrate: u32) -> bool {
-//         if baudrate <= clk_sys_freq() / 8 && baudrate >= 2000 {
-//             let divider = get_pio_divider(8, baudrate);
-//             self.pio.sm0.set_enable(false);
-//             self.pio.sm0.set_config(&self.uart_cfg);
-//             self.pio.sm0.set_clock_divider(divider);
-//             self.pio.sm0.set_enable(true);
-//             true
-//         } else {
-//             false
-//         }
-//     }
-
-//     pub fn set_mode_manchester(&mut self, baudrate: u32) -> bool {
-//         if baudrate <= clk_sys_freq() / 12 && baudrate >= 2000 {
-//             let divider = get_pio_divider(12, baudrate);
-//             self.pio.sm0.set_enable(false);
-//             self.pio.sm0.set_config(&self.manchester_cfg);
-//             self.pio.sm0.set_clock_divider(divider);
-//             self.pio.sm0.set_enable(true);
-//             true
-//         } else {
-//             false
-//         }
-//     }
-
-//     pub async fn read_trace_data(&mut self, data: &mut [u8]) -> usize {
-//         if self.pio.sm0.is_enabled() && data.len() > 0 {
-//             let rx = self.pio.sm0.rx();
-//             if rx.stalled() {
-//                 defmt::warn!("swo stalled");
-//             }
-//             data[0] = (rx.wait_pull().await >> 24) as u8;
-//             for i in 1..data.len() {
-//                 if let Some(word) = rx.try_pull() {
-//                     data[i] = (word >> 24) as u8;
-//                 } else {
-//                     return i;
-//                 }
-//             }
-//         }
-//         return 0;
-//     }
-// }

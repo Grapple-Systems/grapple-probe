@@ -275,11 +275,15 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     fn handle_swj_sequence(&mut self, command: &proto::SWJSequenceCommand<&[u8]>, response: &mut [u8]) -> usize {
         let response = proto::SWJSequenceResponse::try_alloc(response).expect("couldn't allocate swj sequence response");
 
+        defmt::debug!("swj sequence started");
+
         self.reactor.activity();
         let (num_bits, data) = command.get_sequence();
         if self.dap.swj_sequence(num_bits, data) {
+            defmt::debug!("swj sequence succeeded");
             response.commit_ok()
         } else {
+            defmt::debug!("swj sequence failed");
             response.commit_err()
         }
     }
@@ -401,6 +405,8 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
 
     fn handle_jtag_sequence(&mut self, command: &proto::JTAGSequenceCommand<&[u8]>, response: &mut [u8]) -> usize {
         let mut response = proto::JTAGSequenceResponse::try_alloc(response).expect("couldn't allocate jtag sequence response");
+        
+        defmt::debug!("jtag sequence started");
 
         self.reactor.activity();
         let mut tdo_idx = 0;
@@ -419,8 +425,10 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
         }
 
         if status {
+            defmt::debug!("jtag sequence ok");
             response.commit_ok(tdo_idx)
         } else {
+            defmt::debug!("jtag sequence err");
             response.commit_err()
         }
     }
