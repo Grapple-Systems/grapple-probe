@@ -485,7 +485,7 @@ async fn power_task(mut cfg: PowerTaskConfig<'static>) {
 async fn watchdog_task(mut watchdog: embassy_rp::watchdog::Watchdog) {
     loop {
         defmt::debug!("feeding watchdog");
-        watchdog.feed(embassy_time::Duration::from_millis(100));
-        embassy_time::Timer::after_millis(50).await;
+        watchdog.feed(embassy_time::Duration::from_millis(500));
+        embassy_time::Timer::after_millis(100).await;
     }
 }
