@@ -625,8 +625,6 @@ impl<'a, PIO: pio::Instance> JTAG<'a, PIO> {
             block_on(tx.wait_push(u32::from_le_bytes(chunk)));
         }
         while !tx.empty() {}
-
-        defmt::debug!("jtag clock; bits: {}, tms: {:02X}", num_bits, tms);
     }
 
     pub fn transfer(&mut self, num_bits: u32, tms: bool, tdi: &[u8], tdo: &mut [u8]) {
@@ -660,8 +658,6 @@ impl<'a, PIO: pio::Instance> JTAG<'a, PIO> {
             // if we sent a multple of 32 bits, there's an extra pull.
             let _ = block_on(rx.wait_pull());
         }
-
-        defmt::debug!("jtag transfer; bits: {}, tms: {}, tdi: {:02X}, tdo: {:02X}", num_bits, tms != 0, tdi, tdo);
     }
 }
 
