@@ -487,7 +487,6 @@ impl<'a> Pins<'a> {
     }
 
     pub fn swj_pins(&mut self, value: cmsis_dap::Pins, mask: cmsis_dap::Pins, wait_us: u32) -> cmsis_dap::Pins {
-
         // set the output pins
         if mask.get_swclk_tck() {
             self.tck.as_mut().map(|pin| pin.set_level(value.get_swclk_tck().into()));
