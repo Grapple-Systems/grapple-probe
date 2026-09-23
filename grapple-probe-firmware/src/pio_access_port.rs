@@ -530,7 +530,9 @@ impl<'a> Pins<'a> {
         self.tdo.as_ref().map(|pin| pins.set_tdo(pin.is_high()));
         self.resetn.as_ref().map(|pin| pins.set_nreset(pin.is_high()));
         self.tresetn.as_ref().map(|pin| pins.set_ntrst(pin.is_high()));
+
         defmt::info!("swj_pins; value: {:02X}, mask: {:02X}, wait: {} us, read: {:02X}", value.0, mask.0, wait_us, pins.0);
+
         pins
     }
 }
