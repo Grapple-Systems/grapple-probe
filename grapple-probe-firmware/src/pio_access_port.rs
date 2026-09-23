@@ -487,6 +487,7 @@ impl<'a> Pins<'a> {
     }
 
     pub fn swj_pins(&mut self, value: cmsis_dap::Pins, mask: cmsis_dap::Pins, wait_us: u32) -> cmsis_dap::Pins {
+
         // set the output pins
         if mask.get_swclk_tck() {
             self.tck.as_mut().map(|pin| pin.set_level(value.get_swclk_tck().into()));
@@ -526,15 +527,10 @@ impl<'a> Pins<'a> {
 
         // read input pins
         let mut pins = value.clone();
-        if mask.get_tdo() {
-            self.tdo.as_ref().map(|pin| pins.set_tdo(pin.is_high()));
-        }
-        if mask.get_nreset() {
-            self.resetn.as_ref().map(|pin| pins.set_nreset(pin.is_high()));
-        }
-        if mask.get_ntrst() {
-            self.tresetn.as_ref().map(|pin| pins.set_ntrst(pin.is_high()));
-        }
+        self.tdo.as_ref().map(|pin| pins.set_tdo(pin.is_high()));
+        self.resetn.as_ref().map(|pin| pins.set_nreset(pin.is_high()));
+        self.tresetn.as_ref().map(|pin| pins.set_ntrst(pin.is_high()));
+        defmt::info!("swj_pins; value: {:02X}, mask: {:02X}, wait: {} us, read: {:02X}", value.0, mask.0, wait_us, pins.0);
         pins
     }
 }
