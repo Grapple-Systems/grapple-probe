@@ -75,8 +75,6 @@ TReset: gpio::Pin,
     fn try_open_jtag(&self, freq_hz: u32) -> Option<JTAG<'_, APPio>> {
         if let (Ok(swd_token), Ok(swo_token)) = (self.swd_token.try_lock(), self.swo_token.try_lock()) {
             let mut jtag = unsafe {
-                let resetn = self.resetn.as_ref().map(|pin| pin.clone_unchecked());
-                let tresetn = self.tresetn.as_ref().map(|pin| pin.clone_unchecked());
                 JTAG::new(
                     (swd_token, swo_token),
                     self.pio_swd_jtag.clone_unchecked(),
@@ -85,8 +83,7 @@ TReset: gpio::Pin,
                     self.swdio_tms.clone_unchecked(),
                     self.tdi.clone_unchecked(),
                     self.swo_tdo.clone_unchecked(),
-                    self.swdio_tms_dir.clone_unchecked(),
-                    resetn, tresetn)
+                    self.swdio_tms_dir.clone_unchecked())
             };
             jtag.set_frequency(freq_hz);
             defmt::info!("pio-ap-opener: successfully opened jtag");
@@ -100,15 +97,13 @@ TReset: gpio::Pin,
     fn try_open_swd(&self, freq_hz: u32) -> Option<SWD<'_, APPio>> {
         if let Ok(swd_token) = self.swd_token.try_lock() {
             let mut swd = unsafe {
-                let resetn = self.resetn.as_ref().map(|pin| pin.clone_unchecked());
                 SWD::new(
                     swd_token,
                     self.pio_swd_jtag.clone_unchecked(),
                     self.irqs.clone(),
                     self.swdio_tms.clone_unchecked(),
                     self.swclk_tck.clone_unchecked(),
-                    self.swdio_tms_dir.clone_unchecked(),
-                    resetn
+                    self.swdio_tms_dir.clone_unchecked()
                 )
             };
             swd.set_frequency(freq_hz);
@@ -154,8 +149,8 @@ TReset: gpio::Pin,
             let tms = swd_token.as_ref().map(|_| self.swdio_tms.clone_unchecked());
             let tdi = swo_token.as_ref().map(|_| self.tdi.clone_unchecked());
             let tdo = swo_token.as_ref().map(|_| self.swo_tdo.clone_unchecked());
-            let resetn = swd_token.as_ref().and_then(|_| self.resetn.as_ref().map(|pin| pin.clone_unchecked()));
-            let tresetn = swd_token.as_ref().and_then(|_| self.tresetn.as_ref().map(|pin| pin.clone_unchecked()));
+            let resetn = self.resetn.as_ref().map(|pin| pin.clone_unchecked());
+            let tresetn = self.tresetn.as_ref().map(|pin| pin.clone_unchecked());
 
             Pins::new((swd_token, swo_token), tck, tms_dir, tms, tdi, tdo, resetn, tresetn)
         }
@@ -309,11 +304,11 @@ impl<'a, O: PioAccessPortOpener> SWJAccessPort for PioAccessPort<'a, O> {
     }
 
     fn pins(&mut self, out: cmsis_dap::Pins, mask: cmsis_dap::Pins, wait_us: u32) -> cmsis_dap::Pins {
-        match &mut self.inner {
-            PioAccessPortType::Pins(pins) => pins.swj_pins(out, mask, wait_us),
-            _ => cmsis_dap::Pins(0)
+        if let PioAccessPortType::Pins(pins) = &mut self.inner {
+            pins.swj_pins(out, mask, wait_us)
+        } else {
+            self.opener.open_pins().swj_pins(out, mask, wait_us)
         }
-        
     }
 
     fn write_sequence(&mut self, num_bits: usize, data: &[u8]) -> bool {
@@ -531,15 +526,12 @@ impl<'a> Pins<'a> {
 
         // read input pins
         let mut pins = value.clone();
-        if mask.get_tdo() {
-            self.tdo.as_ref().map(|pin| pins.set_tdo(pin.is_high()));
-        }
-        if mask.get_nreset() {
-            self.resetn.as_ref().map(|pin| pins.set_nreset(pin.is_high()));
-        }
-        if mask.get_ntrst() {
-            self.tresetn.as_ref().map(|pin| pins.set_ntrst(pin.is_high()));
-        }
+        self.tdo.as_ref().map(|pin| pins.set_tdo(pin.is_high()));
+        self.resetn.as_ref().map(|pin| pins.set_nreset(pin.is_high()));
+        self.tresetn.as_ref().map(|pin| pins.set_ntrst(pin.is_high()));
+
+        defmt::info!("swj_pins; value: {:02X}, mask: {:02X}, wait: {} us, read: {:02X}", value.0, mask.0, wait_us, pins.0);
+
         pins
     }
 }
@@ -547,8 +539,6 @@ impl<'a> Pins<'a> {
 pub struct JTAG<'a, PIO: pio::Instance> {
     _tokens: (Token<'a>, Token<'a>),
     pio: pio::Pio<'a, PIO>,
-    _resetn: Option<gpio::OutputOpenDrain<'a>>,
-    _tresetn: Option<gpio::OutputOpenDrain<'a>>,
     _idle_address: u8,
     jtag_address: u8,
     swj_address: u8,
@@ -564,9 +554,7 @@ impl<'a, PIO: pio::Instance> JTAG<'a, PIO> {
         tms: Peri<'a, impl PioPin + 'a>,
         tdi: Peri<'a, impl PioPin + 'a>,
         tdo: Peri<'a, impl PioPin + 'a>,
-        tms_dir: Peri<'a, impl PioPin + 'a>,
-        resetn: Option<Peri<'a, impl gpio::Pin + 'a>>,
-        tresetn: Option<Peri<'a, impl gpio::Pin + 'a>>) -> Self
+        tms_dir: Peri<'a, impl PioPin + 'a>) -> Self
     {
         let mut pio = pio::Pio::new(pio, irq);
         let tck_pin = pio.common.make_pio_pin(tck);
@@ -574,8 +562,6 @@ impl<'a, PIO: pio::Instance> JTAG<'a, PIO> {
         let tdi_pin = pio.common.make_pio_pin(tdi);
         let tdo_pin = pio.common.make_pio_pin(tdo);
         let tms_dir_pin = gpio::Output::new(tms_dir, true.into());
-        let resetn_pin = resetn.map(|resetn| gpio::OutputOpenDrain::new(resetn, true.into()));
-        let tresetn_pin = tresetn.map(|tresetn| gpio::OutputOpenDrain::new(tresetn, true.into()));
 
         let prog = pio::program::pio_file!("src/jtag.pio");
         let idle_address = prog.public_defines.idle as u8;
@@ -603,8 +589,6 @@ impl<'a, PIO: pio::Instance> JTAG<'a, PIO> {
         Self {
             _tokens: tokens,
             pio,
-            _resetn: resetn_pin,
-            _tresetn: tresetn_pin,
             _idle_address: idle_address,
             jtag_address,
             swj_address,
@@ -691,7 +675,6 @@ fn truncate(num_bits: u32, data_len: usize) -> (u32, usize) {
 pub struct SWD<'a, PIO: pio::Instance> {
     _token: Token<'a>,
     pio: pio::Pio<'a, PIO>,
-    _resetn: Option<gpio::OutputOpenDrain<'a>>,
     addr: (u8, u8, u8), // (idle, write, read)
 }
 
@@ -703,13 +686,11 @@ impl<'a, PIO: pio::Instance> SWD<'a, PIO> {
         swdio: Peri<'a, impl pio::PioPin + 'a>,
         swclk: Peri<'a, impl pio::PioPin + 'a>,
         swdio_dir: Peri<'a, impl pio::PioPin + 'a>,
-        resetn: Option<Peri<'a, impl gpio::Pin + 'a>>
     ) -> Self {
         let mut pio = pio::Pio::new(pio, irq);
         let swclk_pin = pio.common.make_pio_pin(swclk);
         let swdio_pin = pio.common.make_pio_pin(swdio);
         let swdio_dir_pin = pio.common.make_pio_pin(swdio_dir);
-        let resetn_pin = resetn.map(|resetn| gpio::OutputOpenDrain::new(resetn, true.into()));
         assert_eq!(swdio_dir_pin.pin(), swclk_pin.pin() + 1);
 
         let prog = pio::program::pio_file!("src/swd.pio");
@@ -739,7 +720,6 @@ impl<'a, PIO: pio::Instance> SWD<'a, PIO> {
         Self {
             _token: token,
             pio,
-            _resetn: resetn_pin,
             addr: (idle_addr, write_addr, read_addr),
         }
     }
