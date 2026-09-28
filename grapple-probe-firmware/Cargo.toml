@@ -1,6 +1,6 @@
 [package]
 name = "grapple-probe"
-version = "1.0.1"
+version = "1.0.2"
 authors = [
     "Jonathan Herbst <jonathan.herbst@grapple.systems>",
     "Seth Pierson <seth.pierson@grapple.systems>",
