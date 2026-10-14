@@ -1,0 +1,7 @@
+{
+	"name": "grapple-probe-rust",
+    "image": "rust:1",
+	"runArgs": [
+    	"--network=host"
+	]
+}
