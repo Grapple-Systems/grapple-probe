@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Grapple Systems LLC, All rights reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use grapple_probe_lib::{GrappleProbe, PowerControl};
+use grapple_probe::{GrappleProbe, PowerControl};
 
 #[derive(Debug, clap::Parser)]
 #[command(version, about, long_about = None)]
@@ -205,7 +205,7 @@ fn panic(mut probes: impl Iterator<Item = GrappleProbe>) {
     if let Some(probe) = probes.next() {
         if let Ok(mut dap) = probe.open_cmsis_dap() {
             println!("resetting: {}", probe.get_serial_number());
-            let _ = dap.reset(grapple_probe_lib::ResetType::Panic);
+            let _ = dap.reset(grapple_probe::ResetType::Panic);
         }
     }
 }

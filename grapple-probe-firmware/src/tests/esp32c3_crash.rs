@@ -6,13 +6,13 @@
 #![no_std]
 #![no_main]
 
-use grapple_probe::PioAccessPort;
+use grapple_probe_firmware::PioAccessPort;
 use cmsis_dap::JTAGAccessPort;
 use cmsis_dap::SWJAccessPort;
 
 #[embassy_executor::main]
 async fn main(_spawner: embassy_executor::Spawner) {
-    let mut board = grapple_probe::Board::open();
+    let mut board = grapple_probe_firmware::Board::open();
 
     
     let ap_raw = board.take_access_port();
