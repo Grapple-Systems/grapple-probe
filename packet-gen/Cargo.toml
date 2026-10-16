@@ -7,6 +7,11 @@ authors = [
 ]
 edition = "2024"
 license = "MIT OR Apache-2.0"
+description = "A procedural macro for generating zero-copy packet parsers"
+repository = "https://github.com/Grapple-Systems/grapple-probe"
+readme = "README.md"
+keywords = ["embedded", "packet", "parser", "macro", "no-std"]
+categories = ["embedded", "no-std", "parsing"]
 
 [lib]
 proc-macro = true
