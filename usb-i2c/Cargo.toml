@@ -15,4 +15,4 @@ embassy-usb = { path = "../embassy/embassy-usb" }
 embassy-rp = { path = "../embassy/embassy-rp" }
 embedded-hal-async = "1.0.0"
 num_enum = { version = "0.7.3", default-features = false }
-packet-gen = { path = "../packet-gen" }
+packet-gen = { version = "0.1", path = "../packet-gen" }
