@@ -10,9 +10,16 @@ license = "MIT OR Apache-2.0"
 
 [features]
 default = ["std"]
-std = ["nusb"]
+std = ["clap", "hex", "nusb"]
+
+[[bin]]
+name = "grapple-probe-cli"
+path = "src/bin/cli.rs"
+required-features = ["std"]
 
 [dependencies]
+clap = { version = "4.5.54", features = ["derive"], optional = true }
+hex = { version = "0.4.3", optional = true }
 nusb = { version = "0.2.1", optional = true }
 num_enum = { version = "0.7.5", default-features = false }
 packet-gen = { version = "0.1", path = "../packet-gen" }
