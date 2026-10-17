@@ -45,13 +45,13 @@ packet! {pub ReadResponse<BasePacket>(0x01) {
 For each packet, the macro generates:
 
 ### Building
-- `try_alloc(buf)` — initialize a new packet in a provided buffer
-- `set_<field>()` — mutator for each field
-- `commit()` — finalize and return the total byte length
+- `try_alloc(buf)`: initialize a new packet in a provided buffer
+- `set_<field>()`: mutator for each field
+- `commit()`: finalize and return the total byte length
 
 ### Parsing
-- `TryFrom<BasePacket<B>>` — convert a raw base packet into a typed packet
-- `get_<field>()` — accessor for each field
+- `TryFrom<BasePacket<B>>`: convert a raw base packet into a typed packet
+- `get_<field>()`: accessor for each field
 
 ### Response helpers
 When a response type is specified, `try_alloc_response()` is generated to create a matching response packet.

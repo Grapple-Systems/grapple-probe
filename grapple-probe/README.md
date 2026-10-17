@@ -4,12 +4,12 @@ A library for interfacing with the Grapple Probe.
 
 ## Features
 
-- **`std`** (default) — Host-side USB communication via [`nusb`](https://crates.io/crates/nusb). Provides device enumeration, status queries, and configuration management.
-- **`no_std` compatible** — Disable the default `std` feature to use the crate in embedded/firmware environments.
+- **`std`** (default) USB Probe enumeration, status queries, and configuration management.
+- **`no_std` compatible** Disable the default `std` feature to use the crate in embedded/firmware environments.
 
 ## Usage
 
-### Host (with `std`)
+### USB Host (with `std`)
 
 ```rust
 // Enumerate all connected Grapple Probes and print their status.
@@ -44,8 +44,8 @@ use grapple_probe::{proto, field, ResetType};
 
 ## Error Types
 
-- `Error` — Protocol-level errors (`NotEnoughBytes`, `InvalidPacket`)
-- `HostError` — Host-side USB errors (`PermissionDenied`, `USBError`, `Timeout`, etc.)
+- `Error`: Protocol-level errors (`NotEnoughBytes`, `InvalidPacket`)
+- `HostError`: Host-side USB errors (`PermissionDenied`, `USBError`, `Timeout`, etc.)
 
 ## Protocol
 
