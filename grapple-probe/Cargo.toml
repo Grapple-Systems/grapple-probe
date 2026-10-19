@@ -8,6 +8,7 @@ authors = [
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/Grapple-Systems/grapple-probe"
+description = "Library and tools to interact with the Grapple Probe"
 readme = "README.md"
 
 [features]
