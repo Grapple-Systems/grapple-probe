@@ -41,7 +41,7 @@ jobs:
       runner: ${{ matrix.runner }}
       target: ${{ matrix.target }}
 
-    
+
   release:
     runs-on: ubuntu-latest
     needs: build-test
