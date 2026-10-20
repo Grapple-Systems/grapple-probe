@@ -16,13 +16,6 @@
 //! }
 //! ```
 
-/// Protocol-level error types.
-#[derive(Debug, Eq, PartialEq)]
-pub enum Error {
-    NotEnoughBytes,
-    InvalidPacket,
-}
-
 /// Protocol packet definitions.
 pub mod proto;
 

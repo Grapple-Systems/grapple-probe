@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Grapple Systems LLC, All rights reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::Error;
+use crate::proto::Error;
 
 pub trait Field {
     const ID: u8;

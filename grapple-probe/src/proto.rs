@@ -1,7 +1,11 @@
 // Copyright (c) 2026 Grapple Systems LLC, All rights reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::Error;
+#[derive(Debug, Eq, PartialEq)]
+pub enum Error {
+    NotEnoughBytes,
+    InvalidPacket,
+}
 
 use packet_gen::packet;
 
