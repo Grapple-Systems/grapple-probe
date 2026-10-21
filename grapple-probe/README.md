@@ -31,7 +31,7 @@ grapple-probe = { version = "0.1", default-features = false }
 
 ```rust
 // Parse protocol packets or manipulate configuration fields without std.
-use grapple_probe::{proto, field, ResetType};
+use grapple_probe::{proto, field, proto::ResetType};
 ```
 
 ## Modules
@@ -44,5 +44,5 @@ use grapple_probe::{proto, field, ResetType};
 
 ## Error Types
 
-- `Error`: Protocol-level errors (`NotEnoughBytes`, `InvalidPacket`)
-- `HostError`: Host-side USB errors (`PermissionDenied`, `USBError`, `Timeout`, etc.)
+- `proto::Error`: Protocol-level errors (`NotEnoughBytes`, `InvalidPacket`)
+- `Error`: Host-side USB errors (`PermissionDenied`, `USBError`, `Timeout`, etc.)
