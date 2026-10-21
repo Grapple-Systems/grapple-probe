@@ -28,5 +28,3 @@ mod host;
 
 #[cfg(feature = "std")]
 pub use host::{Error, GrappleProbe, GrappleProbeDebug, PowerControl, Status};
-
-pub use proto::ResetType;

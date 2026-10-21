@@ -205,7 +205,7 @@ fn panic(mut probes: impl Iterator<Item = GrappleProbe>) {
     if let Some(probe) = probes.next() {
         if let Ok(mut dap) = probe.open_cmsis_dap() {
             println!("resetting: {}", probe.get_serial_number());
-            let _ = dap.reset(grapple_probe::ResetType::Panic);
+            let _ = dap.reset(grapple_probe::proto::ResetType::Panic);
         }
     }
 }
