@@ -136,8 +136,8 @@ pub struct TransferResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> TransferResponse<Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, CommandType::Transfer)?;
+    pub fn try_init(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_init(inner, CommandType::Transfer)?;
         if inner.get_payload_mut().len() >= 2 {
             Ok(Self {
                 inner,
@@ -223,8 +223,8 @@ pub struct TransferBlockResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> TransferBlockResponse<Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, CommandType::TransferBlock)?;
+    pub fn try_init(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_init(inner, CommandType::TransferBlock)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self {
                 inner,

@@ -9,7 +9,7 @@ pub enum Error {
 
 impl Error {
     pub fn respond<Buf: AsMut<[u8]>>(buf: Buf) -> Result<usize, Self> {
-        let packet = Packet::try_alloc(buf, CommandType::Unsupported)?;
+        let packet = Packet::try_init(buf, CommandType::Unsupported)?;
         Ok(packet.commit(0))
     }
 }
@@ -56,8 +56,8 @@ pub struct StandardResponse<C, Buf> {
 }
 
 impl<C: CommandProperties, Buf: AsMut<[u8]>> StandardResponse<C, Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, C::TYPE)?;
+    pub fn try_init(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_init(inner, C::TYPE)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self{inner, _command: core::marker::PhantomData})
         } else {
@@ -100,7 +100,7 @@ impl<Buf: AsRef<[u8]>> Packet<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> Packet<Buf> {
-    pub fn try_alloc(mut inner: Buf, command: CommandType) -> Result<Self, Error> {
+    pub fn try_init(mut inner: Buf, command: CommandType) -> Result<Self, Error> {
         if inner.as_mut().len() >= 1 {
             Ok(Self { command, inner })
         } else {
@@ -131,16 +131,16 @@ mod test {
 
         let mut packet = [0u8; 2];
 
-        let response = TestCommandResponse::try_alloc(&mut packet).expect("should be able to allocate response");
+        let response = TestCommandResponse::try_init(&mut packet).expect("should be able to allocate response");
         assert_eq!(response.commit_ok(), 2);
         assert_eq!(packet, [9u8, 0u8]);
 
-        let response = TestCommandResponse::try_alloc(&mut packet).expect("should be able to allocate response");
+        let response = TestCommandResponse::try_init(&mut packet).expect("should be able to allocate response");
         assert_eq!(response.commit_err(), 2);
         assert_eq!(packet, [9u8, 0xFFu8]);
 
         let mut short_packet = [0u8; 1];
-        assert!(matches!(TestCommandResponse::try_alloc(&mut short_packet), Err(Error::BufferNotBigEnough)), "shouldn't be able to allocate with a short buffer");
+        assert!(matches!(TestCommandResponse::try_init(&mut short_packet), Err(Error::BufferNotBigEnough)), "shouldn't be able to allocate with a short buffer");
     }
 
 }

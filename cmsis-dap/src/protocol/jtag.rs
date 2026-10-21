@@ -36,8 +36,8 @@ pub struct JTAGSequenceResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> JTAGSequenceResponse<Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, CommandType::JTAGSequence)?;
+    pub fn try_init(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_init(inner, CommandType::JTAGSequence)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {
@@ -181,8 +181,8 @@ pub struct JTAGIDCodeResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> JTAGIDCodeResponse<Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, CommandType::JTAGIDCode)?;
+    pub fn try_init(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_init(inner, CommandType::JTAGIDCode)?;
         if inner.get_payload_mut().len() >= 5 {
             Ok(Self { inner })
         } else {

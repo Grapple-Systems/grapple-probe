@@ -118,7 +118,7 @@ impl<B: AsRef<[u8]>> BasePacket<B> {
 }
 
 impl<B: AsMut<[u8]>> BasePacket<B> {
-    pub fn try_alloc(mut inner: B) -> Result<Self, Error> {
+    pub fn try_init(mut inner: B) -> Result<Self, Error> {
         if inner.as_mut().len() >= 2 {
             Ok(Self { inner })
         } else {

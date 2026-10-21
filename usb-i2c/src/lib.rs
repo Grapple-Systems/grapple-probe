@@ -67,11 +67,11 @@ impl<'a, USB: embassy_usb::driver::Driver<'a>, D: I2CDevice> I2CUSBDevice<'a, US
                     Ok(protocol::Packet::WriteReadRequest(req)) => self.handle_write_read(req, &mut res_buf).await,
                     Ok(_) => {
                         defmt::error!("i2c_usb: got a response packet");
-                        protocol::GeneralError::try_alloc(&mut res_buf).expect("couldn't allocate response").commit()
+                        protocol::GeneralError::try_init(&mut res_buf).expect("couldn't allocate response").commit()
                     }
                     Err(e) => {
                         defmt::warn!("i2c_usb: parsing error: {}", e);
-                        protocol::GeneralError::try_alloc(&mut res_buf).expect("couldn't allocate response").commit()
+                        protocol::GeneralError::try_init(&mut res_buf).expect("couldn't allocate response").commit()
                     }
                 };
 

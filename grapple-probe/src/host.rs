@@ -83,7 +83,7 @@ impl GrappleProbeDebug {
     /// Get the current status.
     pub fn get_status(&mut self) -> Result<Status, Error> {
         let mut buf = [0u8; 64];
-        let len = proto::GetStatusRequest::try_alloc(&mut buf).expect("buffer not big enough").commit();
+        let len = proto::GetStatusRequest::try_init(&mut buf).expect("buffer not big enough").commit();
         let res = self.request(&mut buf, len)?;
         if let proto::Packet::GetStatusResponse(res) = res {
             let flags = proto::StatusFlags { inner: res.get_flags() };
@@ -130,7 +130,7 @@ impl GrappleProbeDebug {
     /// Read a raw configuration field.
     pub fn read_field(&mut self, field: u8) -> Result<Vec<u8>, Error> {
         let mut buf = [0u8; 64];
-        let mut req = proto::ReadFieldRequest::try_alloc(&mut buf).expect("buffer not big enough");
+        let mut req = proto::ReadFieldRequest::try_init(&mut buf).expect("buffer not big enough");
         req.set_field_id(field);
         let len = req.commit();
 
@@ -149,7 +149,7 @@ impl GrappleProbeDebug {
     /// Write a raw configuration field.
     pub fn write_field(&mut self, id: u8, data: &[u8]) -> Result<(), Error> {
         let mut buf = [0u8; 64];
-        let mut req = proto::WriteFieldRequest::try_alloc(&mut buf).expect("buffer not big enough");
+        let mut req = proto::WriteFieldRequest::try_init(&mut buf).expect("buffer not big enough");
         req.set_field_id(id);
         if data.len() <= req.get_data_mut().len() {
             req.get_data_mut()[..data.len()].copy_from_slice(data);
@@ -172,7 +172,7 @@ impl GrappleProbeDebug {
 
     pub fn reset(&mut self, reset_type: ResetType) -> Result<(), Error> {
         let mut buf = [0u8; 64];
-        let mut req = proto::ResetRequest::try_alloc(&mut buf).expect("buffer not big enough");
+        let mut req = proto::ResetRequest::try_init(&mut buf).expect("buffer not big enough");
         req.set_reset_type(reset_type as u8);
         let len = req.commit();
 
