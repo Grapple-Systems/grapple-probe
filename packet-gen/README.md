@@ -54,7 +54,7 @@ For each packet, the macro generates:
 - `get_<field>()`: accessor for each field
 
 ### Response helpers
-When a response type is specified, `try_alloc_response()` is generated to create a matching response packet.
+When a response type is specified, `try_new_response()` is generated to create a matching response packet.
 
 ## Field Types
 

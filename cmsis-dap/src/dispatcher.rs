@@ -155,7 +155,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
 
         let index = command.get_index();
         for (request, data) in command.get_transfers() {
-            if let Some(response) = response.try_allocate_response(request) {
+            if let Some(response) = response.try_new_response(request) {
                 self.reactor.activity();
                 let timestamp = request.timestamp().then(|| {
                     let ticks = embassy_time::Instant::now().as_ticks();

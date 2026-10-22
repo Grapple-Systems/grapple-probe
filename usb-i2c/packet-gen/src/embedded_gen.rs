@@ -113,7 +113,7 @@ impl quote::ToTokens for AllocResponseMethod {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let response_name = self.response_name.clone();
         tokens.extend(quote::quote! {
-            pub fn try_alloc_response<R: AsMut<[u8]>>(&self, buf: R) -> Result<#response_name<R>, Error> {
+            pub fn try_new_response<R: AsMut<[u8]>>(&self, buf: R) -> Result<#response_name<R>, Error> {
                 let mut res = #response_name::try_new(buf)?;
                 res.base.set_id(self.base.get_id());
                 Ok(res)

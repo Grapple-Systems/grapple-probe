@@ -160,7 +160,7 @@ impl<Buf: AsMut<[u8]>> TransferResponse<Buf> {
             if status.value_mismatch { 0x10 } else { 0 };
     }
 
-    pub fn try_allocate_response<'a>(&'a mut self, request: TransferRequest) -> Option<OneTransferResponse<'a, Buf>> {
+    pub fn try_new_response<'a>(&'a mut self, request: TransferRequest) -> Option<OneTransferResponse<'a, Buf>> {
         let timestamp_len = if request.timestamp() { 4 } else { 0 };
         // data is only in the response if the request is a normal read
         let data_len = if request.is_read() && !request.is_value_match() { 4 } else { 0 };

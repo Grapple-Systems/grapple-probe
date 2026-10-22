@@ -50,7 +50,7 @@ struct CMSISDapReactor {}
 
 impl CMSISDapReactor {
     fn get_status(&self, req: &proto::GetStatusRequest<&[u8]>, res: &mut [u8]) -> usize {
-        let mut res = req.try_alloc_response(res).expect("response buffer not big enough");
+        let mut res = req.try_new_response(res).expect("response buffer not big enough");
         let status = STATE.try_get().expect("state is not set");
         let mut flags = proto::StatusFlags::default();
         flags.set_gnd_detect(status.gnd_detect);
@@ -61,7 +61,7 @@ impl CMSISDapReactor {
     }
 
     async fn read_config(&self, req: &proto::ReadFieldRequest<&[u8]>, res: &mut [u8]) -> usize {
-        let mut res = req.try_alloc_response(res).expect("response buffer not big enough");
+        let mut res = req.try_new_response(res).expect("response buffer not big enough");
         let mut storage_guard = STORAGE.lock().await;
         let storage = storage_guard.as_mut().expect("storage is none");
         if let Ok(value) = storage.read(req.get_field_id()).await {
@@ -82,7 +82,7 @@ impl CMSISDapReactor {
     async fn write_config(&self, req: &proto::WriteFieldRequest<&[u8]>, res: &mut [u8]) -> usize {
         use field::Field;
 
-        let mut res = req.try_alloc_response(res).expect("response buffer not big enough");
+        let mut res = req.try_new_response(res).expect("response buffer not big enough");
         let field_stored = match req.get_field_id() {
             field::OwnedPowerControl::ID => {
                 if let Ok(field) = field::PowerControl::try_parse(req.get_data()) {

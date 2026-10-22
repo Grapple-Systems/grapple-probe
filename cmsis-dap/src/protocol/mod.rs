@@ -131,15 +131,15 @@ mod test {
         let mut response = TransferResponse::try_new(&mut buffer).expect("buffer should be big enough");
         
         let request = TransferRequest(0b00000010); // normal read
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         one_response.commit(TransferStatus::ok(), None, Some(45));
 
         let request = TransferRequest(0b00000000); // normal write
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         one_response.commit(TransferStatus::ok(), None, None);
 
         let request = TransferRequest(0b00100000); // write match mask
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         let status = TransferStatus {
             ack: TransferAck::swd(7),
             protocol_error: true,
@@ -148,11 +148,11 @@ mod test {
         one_response.commit(status, None, None);
 
         let request = TransferRequest(0b00010010); // read with value match
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         one_response.commit(TransferStatus::ok(), None, None);
 
         let request = TransferRequest(0b10000010); // read with timestamp
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         one_response.commit(TransferStatus::ok(), Some(44), Some(43));
 
         let packet_size = response.commit();

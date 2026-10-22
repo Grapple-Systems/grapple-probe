@@ -81,7 +81,7 @@ impl<'a, USB: embassy_usb::driver::Driver<'a>, D: I2CDevice> I2CUSBDevice<'a, US
     }
 
     fn handle_configure(&mut self, req: protocol::ConfigureRequest<&[u8]>, res_buf: &mut [u8]) -> usize {
-        let mut res = req.try_alloc_response(res_buf).expect("couldn't allocate response");
+        let mut res = req.try_new_response(res_buf).expect("couldn't allocate response");
         
         if self.device.configure(req.get_freq_hz()).is_ok() {
             res.set_result(0);
@@ -93,7 +93,7 @@ impl<'a, USB: embassy_usb::driver::Driver<'a>, D: I2CDevice> I2CUSBDevice<'a, US
     }
 
     async fn handle_write(&mut self, req: protocol::WriteRequest<&[u8]>, res_buf: &mut [u8]) -> usize {
-        let mut res = req.try_alloc_response(res_buf).expect("couldn't allocate response");
+        let mut res = req.try_new_response(res_buf).expect("couldn't allocate response");
 
         let address = i2c_address_from_protocol(req.get_address());
         let status = match self.device.write(address, req.get_data()).await {
@@ -105,7 +105,7 @@ impl<'a, USB: embassy_usb::driver::Driver<'a>, D: I2CDevice> I2CUSBDevice<'a, US
     }
 
     async fn handle_read(&mut self, req: protocol::ReadRequest<&[u8]>, res_buf: &mut [u8]) -> usize {
-        let mut res = req.try_alloc_response(res_buf).expect("couldn't allocate response");
+        let mut res = req.try_new_response(res_buf).expect("couldn't allocate response");
 
         let address = i2c_address_from_protocol(req.get_address());
         let read_len = req.get_len() as usize;
@@ -125,7 +125,7 @@ impl<'a, USB: embassy_usb::driver::Driver<'a>, D: I2CDevice> I2CUSBDevice<'a, US
     }
 
     async fn handle_write_read(&mut self, req: protocol::WriteReadRequest<&[u8]>, res_buf: &mut [u8]) -> usize {
-        let mut res = req.try_alloc_response(res_buf).expect("couldn't allocate response");
+        let mut res = req.try_new_response(res_buf).expect("couldn't allocate response");
 
         let address = i2c_address_from_protocol(req.get_address());
         let read_len = req.get_read_len() as usize;
