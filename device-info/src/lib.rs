@@ -83,7 +83,7 @@ pub struct DeviceInfoBuilder<B> {
 }
 
 impl<B: AsMut<[u8]>> DeviceInfoBuilder<B> {
-    pub fn try_init(mut inner: B) -> Result<Self, Error> {
+    pub fn try_new(mut inner: B) -> Result<Self, Error> {
         if inner.as_mut().len() >= 4 {
             Ok(Self { payload_len: 0, inner })
         } else {
@@ -186,7 +186,7 @@ mod tests {
     #[test]
     fn build_and_parse() {
         let mut buf = [0u8; 4096];
-        let mut builder = DeviceInfoBuilder::try_init(&mut buf).
+        let mut builder = DeviceInfoBuilder::try_new(&mut buf).
             expect("should have enough space in buffer to allocate builder");
         builder.add_device_id("grpl-probe-r1-0324");
         let size = builder.commit();
@@ -201,7 +201,7 @@ mod tests {
     #[test]
     fn devicd_id_has_buffer_scope() {
         let mut buf = [0u8; 4096];
-        let mut builder = DeviceInfoBuilder::try_init(&mut buf).
+        let mut builder = DeviceInfoBuilder::try_new(&mut buf).
             expect("should have enough space in buffer to allocate builder");
         builder.add_device_id("grpl-probe-r1-0324");
         let size = builder.commit();

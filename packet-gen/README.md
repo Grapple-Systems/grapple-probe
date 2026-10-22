@@ -45,7 +45,7 @@ packet! {pub ReadResponse<BasePacket>(0x01) {
 For each packet, the macro generates:
 
 ### Building
-- `try_init(buf)`: initialize a new packet in a provided buffer
+- `try_new(buf)`: initialize a new packet in a provided buffer
 - `set_<field>()`: mutator for each field
 - `commit()`: finalize and return the total byte length
 
@@ -72,5 +72,5 @@ When a response type is specified, `try_alloc_response()` is generated to create
 
 The macro generates code that works with a `BasePacket<B>` type you define. Your `BasePacket` needs to implement:
 
-- **Building** (`B: AsMut<[u8]>`): `try_init()`, `set_type()`, `set_id()`, `get_payload_mut()`, `commit()`
+- **Building** (`B: AsMut<[u8]>`): `try_new()`, `set_type()`, `set_id()`, `get_payload_mut()`, `commit()`
 - **Parsing** (`B: AsRef<[u8]>`): `get_type()`, `get_id()`, `get_payload()`

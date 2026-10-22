@@ -92,8 +92,8 @@ pub struct SWOBaudrateResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> SWOBaudrateResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::SWOBaudrate)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::SWOBaudrate)?;
         if inner.get_payload_mut().len() >= 4 {
             Ok(Self { inner })
         } else {
@@ -153,8 +153,8 @@ pub struct SWOStatusResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> SWOStatusResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::SWOStatus)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::SWOStatus)?;
         if inner.get_payload_mut().len() >= 5 {
             Ok(Self { inner })
         } else {
@@ -217,8 +217,8 @@ pub struct SWOExtendedStatusResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> SWOExtendedStatusResponse<Buf> {
-    pub fn try_init(inner: Buf, control: SWOStatusControl) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::SWOExtendedStatus)?;
+    pub fn try_new(inner: Buf, control: SWOStatusControl) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::SWOExtendedStatus)?;
         let payload_len: usize = control.get_fields().iter().
             zip([1usize, 4, 8].iter()).
             map(|(a, b)| *a as usize * b).
@@ -277,8 +277,8 @@ pub struct SWODataResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> SWODataResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::SWOData)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::SWOData)?;
         if inner.get_payload_mut().len() >= 3 {
             Ok(Self{inner})
         } else {

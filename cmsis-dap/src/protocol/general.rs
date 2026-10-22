@@ -32,8 +32,8 @@ pub struct InfoResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> InfoResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut packet = Packet::try_init(inner, CommandType::Info)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut packet = Packet::try_new(inner, CommandType::Info)?;
         if packet.get_payload_mut().len() >= 1 {
             Ok(Self { inner: packet })
         } else {
@@ -92,8 +92,8 @@ pub struct HostStatusResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> HostStatusResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::HostStatus)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::HostStatus)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {
@@ -140,8 +140,8 @@ pub struct ConnectResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> ConnectResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::Connect)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::Connect)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {
@@ -183,8 +183,8 @@ pub struct DisconnectResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> DisconnectResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::Disconnect)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::Disconnect)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {
@@ -235,8 +235,8 @@ pub struct WriteAbortResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> WriteAbortResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::WriteAbort)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::WriteAbort)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {
@@ -283,8 +283,8 @@ pub struct DelayResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> DelayResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::Delay)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::Delay)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {
@@ -317,8 +317,8 @@ pub struct ResetTargetResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> ResetTargetResponse<Buf> {
-    pub fn try_init(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_init(inner, CommandType::ResetTarget)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::ResetTarget)?;
         if inner.get_payload_mut().len() >= 2 {
             Ok(Self { inner, device_specific: false })
         } else {
