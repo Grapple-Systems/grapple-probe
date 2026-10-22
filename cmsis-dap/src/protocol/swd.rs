@@ -35,8 +35,8 @@ pub struct SWDConfigureResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> SWDConfigureResponse<Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, CommandType::SWDConfigure)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::SWDConfigure)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {
@@ -132,8 +132,8 @@ pub struct SWDSequenceResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> SWDSequenceResponse<Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, CommandType::SWDSequence)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::SWDSequence)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner, packet_index: 1 })
         } else {

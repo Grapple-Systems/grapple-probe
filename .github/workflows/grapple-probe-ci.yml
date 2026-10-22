@@ -1,4 +1,4 @@
-name: Grapple Probe CLI CI
+name: Grapple Probe CI
 
 on:
   pull_request:
@@ -23,7 +23,7 @@ jobs:
             runner: macos-latest
             target: aarch64-apple-darwin
 
-    uses: ./.github/workflows/grapple-probe-cli-build-test.yml
+    uses: ./.github/workflows/grapple-probe-build-test.yml
     with:
       runner: ${{ matrix.runner }}
       target: ${{ matrix.target }}

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Grapple Systems LLC, All rights reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use grapple_probe_lib::{GrappleProbe, PowerControl};
+use grapple_probe::{GrappleProbe, PowerControl};
 
 #[derive(Debug, clap::Parser)]
 #[command(version, about, long_about = None)]
@@ -97,13 +97,13 @@ struct PowerControlArgs {
 
 fn list(probes: impl Iterator<Item = GrappleProbe>) {
     for probe in probes {
-        println!("graple probe: {}", probe.get_serial_number());
+        println!("grapple probe: {}", probe.get_serial_number());
     }
 }
 
 fn status(probes: impl Iterator<Item = GrappleProbe>) {
     for probe in probes {
-        println!("graple probe: {}", probe.get_serial_number());
+        println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap() {
             if let Ok(fw_version) = dap.get_firmware_version() {
                 println!("\tfw version: {}", fw_version);
@@ -127,7 +127,7 @@ fn status(probes: impl Iterator<Item = GrappleProbe>) {
 fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlArgs) {
     let probes: Vec<GrappleProbe> = probes.collect();
     if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
-        println!("graple probe: {}", probe.get_serial_number());
+        println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap() {
             if let Ok(()) = dap.modify_power_config(|cfg| {
                     let mut changed = false;
@@ -168,7 +168,7 @@ fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlA
 
 fn read_field(mut probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigArgs) {
     if let Some(probe) = probes.next() {
-        println!("graple probe: {}", probe.get_serial_number());
+        println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap() {
             if let Ok(field_data) = dap.read_field(args.id) {
                 println!("\t{}: {}", args.id, hex::encode(field_data));
@@ -185,7 +185,7 @@ fn read_field(mut probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigAr
 fn write_field(probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs) {
     let probes: Vec<GrappleProbe> = probes.collect();
     if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
-        println!("graple probe: {}", probe.get_serial_number());
+        println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap() {
             if dap.write_field(args.id, &args.data).is_ok() {
                 println!("\tsuccess");
@@ -205,7 +205,7 @@ fn panic(mut probes: impl Iterator<Item = GrappleProbe>) {
     if let Some(probe) = probes.next() {
         if let Ok(mut dap) = probe.open_cmsis_dap() {
             println!("resetting: {}", probe.get_serial_number());
-            let _ = dap.reset(grapple_probe_lib::ResetType::Panic);
+            let _ = dap.reset(grapple_probe::proto::ResetType::Panic);
         }
     }
 }

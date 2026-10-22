@@ -1,0 +1,4 @@
+{
+	"name": "grapple-probe-rust",
+    "image": "rust:1"
+}

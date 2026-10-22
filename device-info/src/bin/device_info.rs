@@ -5,7 +5,7 @@ use std::io::{self, Write, Read};
 
 fn generate(device_id: &str) -> Vec<u8> {
     let mut buf = vec![0u8; 4096];
-    let mut builder = device_info::DeviceInfoBuilder::try_alloc(buf.as_mut_slice()).
+    let mut builder = device_info::DeviceInfoBuilder::try_new(buf.as_mut_slice()).
         expect("should be able to allocate into the buffer");
     builder.add_device_id(device_id);
     let len = builder.commit();

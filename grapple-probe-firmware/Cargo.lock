@@ -852,6 +852,14 @@ dependencies = [
 
 [[package]]
 name = "grapple-probe"
+version = "0.1.0"
+dependencies = [
+ "num_enum",
+ "packet-gen",
+]
+
+[[package]]
+name = "grapple-probe-firmware"
 version = "1.0.2"
 dependencies = [
  "bbqueue",
@@ -872,21 +880,13 @@ dependencies = [
  "embedded-storage-async",
  "fixed",
  "fixed-macro",
- "grapple-probe-proto",
+ "grapple-probe",
  "panic-probe",
  "pio 0.2.1",
  "pio-proc 0.2.2",
  "replace_with",
  "sequential-storage",
  "usb-i2c",
-]
-
-[[package]]
-name = "grapple-probe-proto"
-version = "0.1.0"
-dependencies = [
- "num_enum",
- "packet-gen",
 ]
 
 [[package]]

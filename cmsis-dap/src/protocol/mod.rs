@@ -128,18 +128,18 @@ mod test {
         use crate::types::{TransferAck, TransferRequest, TransferStatus};
 
         let mut buffer = [0u8; 64];
-        let mut response = TransferResponse::try_alloc(&mut buffer).expect("buffer should be big enough");
+        let mut response = TransferResponse::try_new(&mut buffer).expect("buffer should be big enough");
         
         let request = TransferRequest(0b00000010); // normal read
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         one_response.commit(TransferStatus::ok(), None, Some(45));
 
         let request = TransferRequest(0b00000000); // normal write
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         one_response.commit(TransferStatus::ok(), None, None);
 
         let request = TransferRequest(0b00100000); // write match mask
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         let status = TransferStatus {
             ack: TransferAck::swd(7),
             protocol_error: true,
@@ -148,11 +148,11 @@ mod test {
         one_response.commit(status, None, None);
 
         let request = TransferRequest(0b00010010); // read with value match
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         one_response.commit(TransferStatus::ok(), None, None);
 
         let request = TransferRequest(0b10000010); // read with timestamp
-        let one_response = response.try_allocate_response(request).expect("there should be enough buffer for the response");
+        let one_response = response.try_new_response(request).expect("there should be enough buffer for the response");
         one_response.commit(TransferStatus::ok(), Some(44), Some(43));
 
         let packet_size = response.commit();
@@ -167,7 +167,7 @@ mod test {
         use crate::types::TransferStatus;
         
         let mut buffer = [0u8; 64];
-        let mut response = TransferBlockResponse::try_alloc(&mut buffer).expect("there should be enough buffer for the response");
+        let mut response = TransferBlockResponse::try_new(&mut buffer).expect("there should be enough buffer for the response");
         response.set_status(TransferStatus::ok());
         let packet_size = response.commit_with_data(10);
 
@@ -175,7 +175,7 @@ mod test {
         assert_eq!(&buffer[..4], &[0x06, 0x0A, 0x00, 0x01]);
 
         let mut buffer = [0u8; 64];
-        let mut response = TransferBlockResponse::try_alloc(&mut buffer).expect("there should be enough buffer for the response");
+        let mut response = TransferBlockResponse::try_new(&mut buffer).expect("there should be enough buffer for the response");
         response.set_status(TransferStatus::ok());
         let packet_size = response.commit_without_data(10);
 
@@ -215,11 +215,11 @@ mod test {
     fn write_abort_response() {
         let mut packet = [0u8; 16];
 
-        let response = WriteAbortResponse::try_alloc(&mut packet).expect("should be able to alloc write abort response");
+        let response = WriteAbortResponse::try_new(&mut packet).expect("should be able to alloc write abort response");
         assert_eq!(response.commit_ok(), 2);
         assert_eq!(&packet[..2], &[0x08, 0x00]);
 
-        let response = WriteAbortResponse::try_alloc(&mut packet).expect("should be able to alloc write abort response");
+        let response = WriteAbortResponse::try_new(&mut packet).expect("should be able to alloc write abort response");
         assert_eq!(response.commit_err(), 2);
         assert_eq!(&packet[..2], &[0x08, 0xFF]);
     }
@@ -240,7 +240,7 @@ mod test {
     fn delay_response() {
         let mut packet = [0u8; 16];
         
-        let response = DelayResponse::try_alloc(&mut packet).expect("should be able to alloc delay response");
+        let response = DelayResponse::try_new(&mut packet).expect("should be able to alloc delay response");
         assert_eq!(response.commit_ok(), 2);
         assert_eq!(&packet[..2], &[0x09, 0x00]);
     }
@@ -259,17 +259,17 @@ mod test {
     fn reset_target_response() {
         let mut packet = [0u8; 16];
 
-        let mut response = ResetTargetResponse::try_alloc(&mut packet).expect("should be able to alloc reset target response");
+        let mut response = ResetTargetResponse::try_new(&mut packet).expect("should be able to alloc reset target response");
         response.set_device_specific(false);
         assert_eq!(response.commit_ok(), 3);
         assert_eq!(&packet[..3], &[0x0A, 0x00, 0x00]);
 
-        let mut response = ResetTargetResponse::try_alloc(&mut packet).expect("should be able to alloc reset target response");
+        let mut response = ResetTargetResponse::try_new(&mut packet).expect("should be able to alloc reset target response");
         response.set_device_specific(true);
         assert_eq!(response.commit_ok(), 3);
         assert_eq!(&packet[..3], &[0x0A, 0x00, 0x01]);
 
-        let response = ResetTargetResponse::try_alloc(&mut packet).expect("should be able to alloc reset target response");
+        let response = ResetTargetResponse::try_new(&mut packet).expect("should be able to alloc reset target response");
         assert_eq!(response.commit_err(), 3);
         assert_eq!(&packet[..3], &[0x0A, 0xFF, 0x00]);
     }

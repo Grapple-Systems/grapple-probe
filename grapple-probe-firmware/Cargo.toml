@@ -1,5 +1,5 @@
 [package]
-name = "grapple-probe"
+name = "grapple-probe-firmware"
 version = "1.0.2"
 authors = [
     "Jonathan Herbst <jonathan.herbst@grapple.systems>",
@@ -28,7 +28,7 @@ embedded-io-async = "0.7.0"
 embedded-storage-async = "0.4.1"
 fixed = "1.28.0"
 fixed-macro = "1.2"
-grapple-probe-proto = { path = "../grapple-probe/protocol" }
+grapple-probe = { path = "../grapple-probe", default-features = false }
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
 pio = { git = "https://github.com/rp-rs/pio-rs", rev = "fa586448b0b223217eec8c92c19fe6823dd04cc4" }
 pio-proc = { git = "https://github.com/rp-rs/pio-rs", rev = "fa586448b0b223217eec8c92c19fe6823dd04cc4" }

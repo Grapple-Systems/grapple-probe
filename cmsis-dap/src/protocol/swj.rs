@@ -41,8 +41,8 @@ pub struct SWJPinsResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> SWJPinsResponse<Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, CommandType::SWJPins)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::SWJPins)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {
@@ -85,8 +85,8 @@ pub struct SWJClockResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> SWJClockResponse<Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, CommandType::SWJClock)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::SWJClock)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {
@@ -142,8 +142,8 @@ pub struct SWJSequenceResponse<Buf> {
 }
 
 impl<Buf: AsMut<[u8]>> SWJSequenceResponse<Buf> {
-    pub fn try_alloc(inner: Buf) -> Result<Self, Error> {
-        let mut inner = Packet::try_alloc(inner, CommandType::SWJSequence)?;
+    pub fn try_new(inner: Buf) -> Result<Self, Error> {
+        let mut inner = Packet::try_new(inner, CommandType::SWJSequence)?;
         if inner.get_payload_mut().len() >= 1 {
             Ok(Self { inner })
         } else {

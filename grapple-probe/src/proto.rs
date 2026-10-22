@@ -1,7 +1,11 @@
 // Copyright (c) 2026 Grapple Systems LLC, All rights reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::Error;
+#[derive(Debug, Eq, PartialEq)]
+pub enum Error {
+    NotEnoughBytes,
+    InvalidPacket,
+}
 
 use packet_gen::packet;
 
@@ -123,7 +127,7 @@ impl<B: AsRef<[u8]>> BasePacket<B> {
 }
 
 impl<B: AsMut<[u8]>> BasePacket<B> {
-    pub fn try_alloc(mut inner: B) -> Result<Self, Error> {
+    pub fn try_new(mut inner: B) -> Result<Self, Error> {
         if inner.as_mut().len() >= 2 {
             inner.as_mut()[0] = 0xE0;
             Ok(Self{ inner })

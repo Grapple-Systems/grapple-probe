@@ -6,7 +6,7 @@
 
 use cmsis_dap::PacketBuffer;
 use embedded_io_async::{Read, Write};
-use grapple_probe_proto::{field, proto};
+use grapple_probe::{field, proto};
 
 #[derive(Clone)]
 struct State {
@@ -38,7 +38,7 @@ impl State {
 type InterTaskMutex = embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 static STATE: embassy_sync::watch::Watch<InterTaskMutex, State, 1> = embassy_sync::watch::Watch::new_with(State::new());
 
-static STORAGE: embassy_sync::mutex::Mutex<InterTaskMutex, Option<grapple_probe::Storage<'static>>> = 
+static STORAGE: embassy_sync::mutex::Mutex<InterTaskMutex, Option<grapple_probe_firmware::Storage<'static>>> = 
     embassy_sync::mutex::Mutex::new(None);
 
 const BUFFER_SIZE: usize = 8*1024;
@@ -50,7 +50,7 @@ struct CMSISDapReactor {}
 
 impl CMSISDapReactor {
     fn get_status(&self, req: &proto::GetStatusRequest<&[u8]>, res: &mut [u8]) -> usize {
-        let mut res = req.try_alloc_response(res).expect("response buffer not big enough");
+        let mut res = req.try_new_response(res).expect("response buffer not big enough");
         let status = STATE.try_get().expect("state is not set");
         let mut flags = proto::StatusFlags::default();
         flags.set_gnd_detect(status.gnd_detect);
@@ -61,7 +61,7 @@ impl CMSISDapReactor {
     }
 
     async fn read_config(&self, req: &proto::ReadFieldRequest<&[u8]>, res: &mut [u8]) -> usize {
-        let mut res = req.try_alloc_response(res).expect("response buffer not big enough");
+        let mut res = req.try_new_response(res).expect("response buffer not big enough");
         let mut storage_guard = STORAGE.lock().await;
         let storage = storage_guard.as_mut().expect("storage is none");
         if let Ok(value) = storage.read(req.get_field_id()).await {
@@ -82,7 +82,7 @@ impl CMSISDapReactor {
     async fn write_config(&self, req: &proto::WriteFieldRequest<&[u8]>, res: &mut [u8]) -> usize {
         use field::Field;
 
-        let mut res = req.try_alloc_response(res).expect("response buffer not big enough");
+        let mut res = req.try_new_response(res).expect("response buffer not big enough");
         let field_stored = match req.get_field_id() {
             field::OwnedPowerControl::ID => {
                 if let Ok(field) = field::PowerControl::try_parse(req.get_data()) {
@@ -206,7 +206,7 @@ async fn main(spawner: embassy_executor::Spawner) {
     use embassy_usb::msos;
     use field::Field;
 
-    let mut board = grapple_probe::Board::open();
+    let mut board = grapple_probe_firmware::Board::open();
 
     spawner.spawn(watchdog_task(board.take_watchdog()).expect("failed to spawn watchdog task"));
 
@@ -281,8 +281,8 @@ async fn main(spawner: embassy_executor::Spawner) {
     let guid_data = msos::PropertyData::RegMultiSz(&["{CDB3B5AD-293B-4663-AA36-1AAE46463776}"]);
     usb_builder.msos_feature(msos::RegistryPropertyFeatureDescriptor::new("DeviceInterfaceGUIDs", guid_data));
 
-    let access_port = grapple_probe::PioAccessPort::new(&debug_access_port);
-    let swo_port = grapple_probe::PioSWO::new(&debug_access_port);
+    let access_port = grapple_probe_firmware::PioAccessPort::new(&debug_access_port);
+    let swo_port = grapple_probe_firmware::PioSWO::new(&debug_access_port);
 
     let mut swo_buffer = bbqueue::BBBuffer::<SWO_BUFFER_SIZE>::new();
 
@@ -322,7 +322,7 @@ enum USBUartCommand {
     Retry,
 }
 
-async fn usb_uart<'a>(mut vcom: embassy_usb::class::cdc_acm::CdcAcmClass<'a, grapple_probe::USBDriver<'a>>, almost_uart: grapple_probe::AlmostUart) {
+async fn usb_uart<'a>(mut vcom: embassy_usb::class::cdc_acm::CdcAcmClass<'a, grapple_probe_firmware::USBDriver<'a>>, almost_uart: grapple_probe_firmware::AlmostUart) {
     let mut uart_tx_buffer = [0u8; 256];
     let mut uart_rx_buffer = [0u8; 256];
     let mut uart = almost_uart.into_buffered(&mut uart_tx_buffer, &mut uart_rx_buffer);
@@ -390,7 +390,7 @@ async fn usb_uart<'a>(mut vcom: embassy_usb::class::cdc_acm::CdcAcmClass<'a, gra
 }
 
 #[embassy_executor::task]
-async fn ui_task(mut led: grapple_probe::LED<'static>) {
+async fn ui_task(mut led: grapple_probe_firmware::LED<'static>) {
     led.set(100, 0, 0);
     let mut led_blink = false;
 
@@ -430,9 +430,9 @@ async fn ui_task(mut led: grapple_probe::LED<'static>) {
 }
 
 struct PowerTaskConfig<'a> {
-    pub adc: grapple_probe::ADC<'a>,
+    pub adc: grapple_probe_firmware::ADC<'a>,
     pub gnd_detect: embassy_rp::gpio::Input<'a>,
-    pub vreg: grapple_probe::PWMVoltageRegulator<'a>,
+    pub vreg: grapple_probe_firmware::PWMVoltageRegulator<'a>,
     pub key5v: embassy_rp::gpio::Output<'a>,
 }
 

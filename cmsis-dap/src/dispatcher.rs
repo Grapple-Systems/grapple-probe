@@ -72,7 +72,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_info(&mut self, command: &proto::InfoCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::InfoResponse::try_alloc(response).expect("couldn't allocate info response");
+        let response = proto::InfoResponse::try_new(response).expect("couldn't allocate info response");
 
         match command.get_id() {
             0x01..=0x03 => response.commit(0), // indicate that usb has the correct values
@@ -105,13 +105,13 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     async fn handle_host_status(&mut self, command: &proto::HostStatusCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::HostStatusResponse::try_alloc(response).expect("couldn't allocate host status response");
+        let response = proto::HostStatusResponse::try_new(response).expect("couldn't allocate host status response");
         self.reactor.host_status(command.get()).await;
         response.commit()
     }
 
     fn handle_connect(&mut self, command: &proto::ConnectCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::ConnectResponse::try_alloc(response).expect("couldn't allocate connect response");
+        let response = proto::ConnectResponse::try_new(response).expect("couldn't allocate connect response");
 
         defmt::info!("dispatcher: handle connect");
 
@@ -123,7 +123,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_disconnect(&mut self, response: &mut [u8]) -> usize {
-        let response = proto::DisconnectResponse::try_alloc(response).expect("couldn't allocate disconnect response");
+        let response = proto::DisconnectResponse::try_new(response).expect("couldn't allocate disconnect response");
 
         defmt::info!("dispatcher: handle disconnect");
 
@@ -138,7 +138,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_transfer_configure(&mut self, command: &proto::TransferConfigureCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::TransferConfigureResponse::try_alloc(response).expect("couldn't allocate transfer configure response");
+        let response = proto::TransferConfigureResponse::try_new(response).expect("couldn't allocate transfer configure response");
 
         defmt::info!("transfer configure; idle_cycles: {}, wait_retry: {}, match_retry: {}",
             command.get_idle_cycles(), command.get_wait_retry(), command.get_match_retry());
@@ -151,11 +151,11 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_transfer(&mut self, command: &proto::TransferCommand<&[u8]>, response: &mut [u8], abort: &AbortToken) -> usize {
-        let mut response = proto::TransferResponse::try_alloc(response).expect("couldn't allocate transfer response");
+        let mut response = proto::TransferResponse::try_new(response).expect("couldn't allocate transfer response");
 
         let index = command.get_index();
         for (request, data) in command.get_transfers() {
-            if let Some(response) = response.try_allocate_response(request) {
+            if let Some(response) = response.try_new_response(request) {
                 self.reactor.activity();
                 let timestamp = request.timestamp().then(|| {
                     let ticks = embassy_time::Instant::now().as_ticks();
@@ -197,7 +197,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_transfer_block(&mut self, command: &proto::TransferBlockCommand<&[u8]>, response: &mut [u8], abort: &AbortToken) -> usize {
-        let mut response = proto::TransferBlockResponse::try_alloc(response).expect("couldn't allocate transfer block response");
+        let mut response = proto::TransferBlockResponse::try_new(response).expect("couldn't allocate transfer block response");
 
         self.reactor.activity();
         let index = command.get_index();
@@ -222,7 +222,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_write_abort(&mut self, command: &proto::WriteAbortCommand<&[u8]>, response: &mut [u8], abort: &AbortToken) -> usize {
-        let response = proto::WriteAbortResponse::try_alloc(response).expect("couldn't allocate write abort response");
+        let response = proto::WriteAbortResponse::try_new(response).expect("couldn't allocate write abort response");
 
         let index = command.get_dap_index();
         let data = command.get_abort_value();
@@ -236,21 +236,21 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     async fn handle_delay(&mut self, command: &proto::DelayCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::DelayResponse::try_alloc(response).expect("couldn't allocate delay response");
+        let response = proto::DelayResponse::try_new(response).expect("couldn't allocate delay response");
 
         embassy_time::Timer::after_micros(command.get_delay_us() as u64).await;
         response.commit_ok()
     }
 
     fn handle_reset_target(&mut self, _command: &proto::ResetTargetCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let mut response = proto::ResetTargetResponse::try_alloc(response).expect("couldn't allocate reset target response");
+        let mut response = proto::ResetTargetResponse::try_new(response).expect("couldn't allocate reset target response");
 
         response.set_device_specific(false);
         response.commit_ok()
     }
 
     fn handle_swj_pins(&mut self, command: &proto::SWJPinsCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::SWJPinsResponse::try_alloc(response).expect("couldn't allocate swj pins response");
+        let response = proto::SWJPinsResponse::try_new(response).expect("couldn't allocate swj pins response");
 
         self.reactor.activity();
         let input_pins = self.dap.swj_pins(
@@ -261,7 +261,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_swj_clock(&mut self, command: &proto::SWJClockCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::SWJClockResponse::try_alloc(response).expect("couldn't allocate swj clock response");
+        let response = proto::SWJClockResponse::try_new(response).expect("couldn't allocate swj clock response");
 
         defmt::info!("swj clock: {} Hz", command.get_freq_hz());
 
@@ -273,7 +273,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_swj_sequence(&mut self, command: &proto::SWJSequenceCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::SWJSequenceResponse::try_alloc(response).expect("couldn't allocate swj sequence response");
+        let response = proto::SWJSequenceResponse::try_new(response).expect("couldn't allocate swj sequence response");
 
         defmt::debug!("swj sequence started");
 
@@ -289,7 +289,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_swd_configure(&mut self, command: &proto::SWDConfigureCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::SWDConfigureResponse::try_alloc(response).expect("couldn't allocate swd configure response");
+        let response = proto::SWDConfigureResponse::try_new(response).expect("couldn't allocate swd configure response");
 
         self.dap.transfer_config.swd.turnaround = command.get_turnaround();
         self.dap.transfer_config.swd.always_data_phase = command.get_always_data_phase();
@@ -298,7 +298,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_swd_sequence(&mut self, command: &proto::SWDSequenceCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let mut response = proto::SWDSequenceResponse::try_alloc(response).expect("couldn't allocate swd sequence response");
+        let mut response = proto::SWDSequenceResponse::try_new(response).expect("couldn't allocate swd sequence response");
 
         self.reactor.activity();
         for (num_bits, data) in command.sequences() {
@@ -321,7 +321,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
 
     fn handle_swo_transport(&mut self, command: &proto::SWOTransportCommand<&[u8]>, response: &mut [u8]) -> usize {
         if let Some(swo) = self.swo.as_mut() {
-            let response = proto::SWOTransportResponse::try_alloc(response).expect("couldn't allocate swo transfer response");
+            let response = proto::SWOTransportResponse::try_new(response).expect("couldn't allocate swo transfer response");
 
             if command.try_get_transport().is_some_and(|transport| swo.set_transport(transport)) {
                 response.commit_ok()
@@ -335,7 +335,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
 
     fn handle_swo_mode(&mut self, command: &proto::SWOModeCommand<&[u8]>, response: &mut [u8]) -> usize {
         if let Some(swo) = self.swo.as_mut() {
-            let response = proto::SWOModeResponse::try_alloc(response).expect("couldn't allocate swo mode response");
+            let response = proto::SWOModeResponse::try_new(response).expect("couldn't allocate swo mode response");
 
             defmt::info!("dispatcher: handle swo mode");
 
@@ -351,7 +351,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
 
     fn handle_swo_baudrate(&mut self, command: &proto::SWOBaudrateCommand<&[u8]>, response: &mut [u8]) -> usize {
         if let Some(swo) = self.swo.as_mut() {
-            let response = proto::SWOBaudrateResponse::try_alloc(response).expect("couldn't allocate swo baudrate response");
+            let response = proto::SWOBaudrateResponse::try_new(response).expect("couldn't allocate swo baudrate response");
 
             if swo.set_baudrate(command.get_baudrate()) {
                 response.commit(command.get_baudrate())
@@ -365,7 +365,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
 
     fn handle_swo_control(&mut self, command: &proto::SWOControlCommand<&[u8]>, response: &mut [u8]) -> usize {
         if let Some(swo) = self.swo.as_mut() {
-            let response = proto::SWOControlResponse::try_alloc(response).expect("couldn't allocate swo control response");
+            let response = proto::SWOControlResponse::try_new(response).expect("couldn't allocate swo control response");
 
             swo.set_active(command.is_start());
             response.commit_ok()
@@ -376,7 +376,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
 
     fn handle_swo_status(&mut self, response: &mut [u8]) -> usize {
         if let Some(swo) = self.swo.as_mut() {
-            let response = proto::SWOStatusResponse::try_alloc(response).expect("couldn't allocate swo status response");
+            let response = proto::SWOStatusResponse::try_new(response).expect("couldn't allocate swo status response");
             response.commit(&swo.get_status())
         } else {
             proto::Error::respond(response).expect("unable to allocate unsupported response")
@@ -385,7 +385,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
 
     fn handle_swo_extended_status(&mut self, command: &proto::SWOExtendedStatusCommand<&[u8]>, response: &mut [u8]) -> usize {
         if let Some(swo) = self.swo.as_mut() {
-            let response = proto::SWOExtendedStatusResponse::try_alloc(response, command.get_control()).expect("couldn't allocate swo extended status response");
+            let response = proto::SWOExtendedStatusResponse::try_new(response, command.get_control()).expect("couldn't allocate swo extended status response");
             response.commit(&swo.get_status())
         } else {
             proto::Error::respond(response).expect("unable to allocate unsupported response")
@@ -394,7 +394,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
 
     fn handle_swo_data(&mut self, command: &proto::SWODataCommand<&[u8]>, response: &mut [u8]) -> usize {
         if let Some(swo) = self.swo.as_mut() {
-            let mut response = proto::SWODataResponse::try_alloc(response).expect("couldn't allocate swo extended data response");
+            let mut response = proto::SWODataResponse::try_new(response).expect("couldn't allocate swo extended data response");
             let max_read_size = response.get_trace_data_mut().len().min(command.get_max_trace_count() as usize);
             let data_read = swo.read_trace_data(&mut response.get_trace_data_mut()[..max_read_size]).unwrap_or(0);
             response.commit(&swo.get_status(), data_read as u16)
@@ -404,7 +404,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_jtag_sequence(&mut self, command: &proto::JTAGSequenceCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let mut response = proto::JTAGSequenceResponse::try_alloc(response).expect("couldn't allocate jtag sequence response");
+        let mut response = proto::JTAGSequenceResponse::try_new(response).expect("couldn't allocate jtag sequence response");
         
         defmt::debug!("jtag sequence started");
 
@@ -434,7 +434,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_jtag_configure(&mut self, command: &proto::JTAGConfigureCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::JTAGConfigureResponse::try_alloc(response).expect("couldn't allocate jtag configure response");
+        let response = proto::JTAGConfigureResponse::try_new(response).expect("couldn't allocate jtag configure response");
 
         let ir_lengths = command.get_ir_lengths();
         if self.dap.transfer_config.jtag.ir_lengths.len() >= ir_lengths.len() {
@@ -448,7 +448,7 @@ impl<'a, P: JTAGAccessPort + SWJAccessPort + SWDAccessPort, R: crate::Reactor, S
     }
 
     fn handle_jtag_idcode(&mut self, command: &proto::JTAGIDCodeCommand<&[u8]>, response: &mut [u8]) -> usize {
-        let response = proto::JTAGIDCodeResponse::try_alloc(response).expect("couldn't allocate jtag id code response");
+        let response = proto::JTAGIDCodeResponse::try_new(response).expect("couldn't allocate jtag id code response");
 
         self.reactor.activity();
         if let Some(idcode) = self.dap.jtag_read_idcode(command.get_index()) {

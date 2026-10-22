@@ -1,5 +1,5 @@
 [package]
-name = "grapple-probe-lib"
+name = "grapple-probe"
 version = "0.1.0"
 authors = [
     "Jonathan Herbst <jonathan.herbst@grapple.systems>",
@@ -7,7 +7,22 @@ authors = [
 ]
 edition = "2024"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/Grapple-Systems/grapple-probe"
+description = "Library and tools to interact with the Grapple Probe"
+readme = "README.md"
+
+[features]
+default = ["std"]
+std = ["clap", "hex", "nusb"]
+
+[[bin]]
+name = "grapple-probe-cli"
+path = "src/bin/cli.rs"
+required-features = ["std"]
 
 [dependencies]
-nusb = "0.2.1"
-grapple-probe-proto = { path = "protocol" }
+clap = { version = "4.5.54", features = ["derive"], optional = true }
+hex = { version = "0.4.3", optional = true }
+nusb = { version = "0.2.1", optional = true }
+num_enum = { version = "0.7.5", default-features = false }
+packet-gen = { version = "0.1", path = "../packet-gen" }

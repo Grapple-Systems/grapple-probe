@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Grapple Systems LLC, All rights reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::Error;
+use crate::proto::Error;
 
 pub trait Field {
     const ID: u8;
@@ -89,7 +89,7 @@ impl<B: AsRef<[u8]>> PowerControl<B> {
 }
 
 impl<B: AsMut<[u8]>> PowerControl<B> {
-    pub fn try_alloc(mut inner: B) -> Result<Self, Error> {
+    pub fn try_new(mut inner: B) -> Result<Self, Error> {
         if inner.as_mut().len() >= 6 {
             Ok(Self { inner })
         } else {
