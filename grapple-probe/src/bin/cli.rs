@@ -95,22 +95,22 @@ struct PowerControlArgs {
     key5v: Option<bool>,
 }
 
-fn list(probes: impl Iterator<Item = GrappleProbe>) {
+async fn list(probes: Vec<GrappleProbe>) {
     for probe in probes {
         println!("grapple probe: {}", probe.get_serial_number());
     }
 }
 
-fn status(probes: impl Iterator<Item = GrappleProbe>) {
+async fn status(probes: Vec<GrappleProbe>) {
     for probe in probes {
         println!("grapple probe: {}", probe.get_serial_number());
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
-            if let Ok(fw_version) = dap.get_firmware_version() {
+        if let Ok(mut dap) = probe.open_cmsis_dap().await {
+            if let Ok(fw_version) = dap.get_firmware_version().await {
                 println!("\tfw version: {}", fw_version);
             } else {
                 println!("\tfailed to get firmware version");
             }
-            if let Ok(status) = dap.get_status() {
+            if let Ok(status) = dap.get_status().await {
                 println!("\tgnd detected: {}", status.gnddet);
                 println!("\ttvcc: {} mv", status.target_mv);
                 println!("\tsignal: {} mv", status.signal_mv);
@@ -124,11 +124,10 @@ fn status(probes: impl Iterator<Item = GrappleProbe>) {
     }
 }
 
-fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlArgs) {
-    let probes: Vec<GrappleProbe> = probes.collect();
+async fn power_control(probes: Vec<GrappleProbe>, args: PowerControlArgs) {
     if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
         println!("grapple probe: {}", probe.get_serial_number());
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
+        if let Ok(mut dap) = probe.open_cmsis_dap().await {
             if let Ok(()) = dap.modify_power_config(|cfg| {
                     let mut changed = false;
                     if args.default { cfg.clone_from(&PowerControl::default()); changed = true; }
@@ -142,9 +141,9 @@ fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlA
                     if let Some(target_gnddet) = args.target_gnddet { cfg.tvcc_gated_by_gnddet = target_gnddet; changed = true; }
                     if let Some(target) = args.target { cfg.tvcc_output_mv = target; changed = true; }
                     changed
-                })
+                }).await
             {
-                if let Ok(config) = dap.get_power_config() {
+                if let Ok(config) = dap.get_power_config().await {
                     println!("\t5VKey enabled: {}", config.key5v_enable);
                     let gnddet = if config.signal_gated_by_gnddet { "[gnddet]" } else { "gnddet" };
                     let tvcc = if config.signal_gated_by_tvcc { "[tvcc]" } else { "tvcc" };
@@ -166,11 +165,11 @@ fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlA
     }
 }
 
-fn read_field(mut probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigArgs) {
-    if let Some(probe) = probes.next() {
+async fn read_field(probes: Vec<GrappleProbe>, args: ReadConfigArgs) {
+    if let Some(probe) = probes.into_iter().next() {
         println!("grapple probe: {}", probe.get_serial_number());
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
-            if let Ok(field_data) = dap.read_field(args.id) {
+        if let Ok(mut dap) = probe.open_cmsis_dap().await {
+            if let Ok(field_data) = dap.read_field(args.id).await {
                 println!("\t{}: {}", args.id, hex::encode(field_data));
             }
             else {
@@ -182,12 +181,11 @@ fn read_field(mut probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigAr
     }
 }
 
-fn write_field(probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs) {
-    let probes: Vec<GrappleProbe> = probes.collect();
+async fn write_field(probes: Vec<GrappleProbe>, args: WriteConfigArgs) {
     if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
         println!("grapple probe: {}", probe.get_serial_number());
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
-            if dap.write_field(args.id, &args.data).is_ok() {
+        if let Ok(mut dap) = probe.open_cmsis_dap().await {
+            if dap.write_field(args.id, &args.data).await.is_ok() {
                 println!("\tsuccess");
             }
             else {
@@ -201,30 +199,35 @@ fn write_field(probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs
     }
 }
 
-fn panic(mut probes: impl Iterator<Item = GrappleProbe>) {
-    if let Some(probe) = probes.next() {
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
+async fn panic_cmd(probes: Vec<GrappleProbe>) {
+    if let Some(probe) = probes.into_iter().next() {
+        if let Ok(mut dap) = probe.open_cmsis_dap().await {
             println!("resetting: {}", probe.get_serial_number());
-            let _ = dap.reset(grapple_probe::proto::ResetType::Panic);
+            let _ = dap.reset(grapple_probe::proto::ResetType::Panic).await;
         }
     }
 }
 
 fn main() {
-    use clap::Parser;
+    smol::block_on(async {
+        use clap::Parser;
 
-    let args = Args::parse();
+        let args = Args::parse();
 
-    let probes = GrappleProbe::all().filter(|probe| {
-        args.serial.as_ref().is_none_or(|serial| probe.get_serial_number() == serial.as_str())
-    });
+        let probes = GrappleProbe::all().await
+            .into_iter()
+            .filter(|probe| {
+                args.serial.as_ref().is_none_or(|serial| probe.get_serial_number() == serial.as_str())
+            })
+            .collect::<Vec<_>>();
 
-    match args.command {
-        Commands::List => list(probes),
-        Commands::Status => status(probes),
-        Commands::PowerControl(args) => power_control(probes, args),
-        Commands::ReadConfig(args) => read_field(probes, args),
-        Commands::WriteConfig(args) => write_field(probes, args),
-        Commands::Panic => panic(probes),
-    }
+        match args.command {
+            Commands::List => list(probes).await,
+            Commands::Status => status(probes).await,
+            Commands::PowerControl(args) => power_control(probes, args).await,
+            Commands::ReadConfig(args) => read_field(probes, args).await,
+            Commands::WriteConfig(args) => write_field(probes, args).await,
+            Commands::Panic => panic_cmd(probes).await,
+        }
+    })
 }

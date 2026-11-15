@@ -5,15 +5,17 @@
 
 //! A library for interfacing with Grapple Probes.
 //! 
-//! ``` rust
+//! ```no_run
 //! // Print out the serial number, measured target voltage, and commanded signal voltage for each detected Grapple Probe.
-//! for probe in GrappleProbe.all() {
-//!     println!("grapple probe: {}", probe.get_serial_number());
+//! smol::block_on(async {
+//!     for probe in grapple_probe::GrappleProbe::all().await {
+//!         println!("grapple probe: {}", probe.get_serial_number());
 //! 
-//!     let mut dap = probe.open_cmsis_dap().unwrap();
-//!     let status = dap.get_status().unwrap();
-//!     println!("\ttvcc: {} mv, signal: {} mv", status.target_mv, status.signal_mv);
-//! }
+//!         let mut dap = probe.open_cmsis_dap().await.unwrap();
+//!         let status = dap.get_status().await.unwrap();
+//!         println!("\ttvcc: {} mv, signal: {} mv", status.target_mv, status.signal_mv);
+//!     }
+//! });
 //! ```
 
 /// Protocol packet definitions.
