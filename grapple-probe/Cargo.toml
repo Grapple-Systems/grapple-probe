@@ -13,7 +13,7 @@ readme = "README.md"
 
 [features]
 default = ["std"]
-std = ["clap", "hex", "nusb", "smol"]
+std = ["clap", "futures", "hex", "nusb", "smol"]
 
 [[bin]]
 name = "grapple-probe-cli"
@@ -26,5 +26,5 @@ hex = { version = "0.4.3", optional = true }
 nusb = { version = "0.2.1", optional = true, features = ["smol"] }
 num_enum = { version = "0.7.5", default-features = false }
 packet-gen = { version = "0.1", path = "../packet-gen" }
-futures = { version = "0.3", default-features = false, features = ["std"] }
+futures = { version = "0.3", default-features = false, features = ["std"], optional = true }
 smol = { version = "2", optional = true }
