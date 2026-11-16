@@ -199,7 +199,7 @@ async fn write_field(probes: Vec<GrappleProbe>, args: WriteConfigArgs) {
     }
 }
 
-async fn panic_cmd(probes: Vec<GrappleProbe>) {
+async fn panic(probes: Vec<GrappleProbe>) {
     if let Some(probe) = probes.into_iter().next() {
         if let Ok(mut dap) = probe.open_cmsis_dap().await {
             println!("resetting: {}", probe.get_serial_number());
@@ -227,7 +227,7 @@ fn main() {
             Commands::PowerControl(args) => power_control(probes, args).await,
             Commands::ReadConfig(args) => read_field(probes, args).await,
             Commands::WriteConfig(args) => write_field(probes, args).await,
-            Commands::Panic => panic_cmd(probes).await,
+            Commands::Panic => panic(probes).await,
         }
     })
 }
