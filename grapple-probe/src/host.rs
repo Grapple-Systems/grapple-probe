@@ -40,6 +40,11 @@ impl GrappleProbe {
             .collect()
     }
 
+    /// Enumerate all the Grapple Probes (blocking).
+    pub fn all_blocking() -> Vec<GrappleProbe> {
+        smol::block_on(Self::all())
+    }
+
     /// Get the serial number.
     pub fn get_serial_number(&self) -> &str {
         self.dev.serial_number().expect("device doesn't have serial number")
@@ -62,6 +67,11 @@ impl GrappleProbe {
             Err(Error::DeviceDoesntHaveCMSIS)
         }
     }
+
+    /// Open the cmsis dap interface (blocking).  When this is open the probe can't be used as a debugger.
+    pub fn open_cmsis_dap_blocking(&self) -> Result<GrappleProbeDebug, Error> {
+        smol::block_on(self.open_cmsis_dap())
+    }
 }
 
 impl GrappleProbeDebug {
@@ -81,6 +91,11 @@ impl GrappleProbeDebug {
         }
     }
 
+    /// Get the firmware version (blocking).
+    pub fn get_firmware_version_blocking(&mut self) -> Result<String, Error> {
+        smol::block_on(self.get_firmware_version())
+    }
+
     /// Get the current status.
     pub async fn get_status(&mut self) -> Result<Status, Error> {
         let mut buf = [0u8; 64];
@@ -96,6 +111,11 @@ impl GrappleProbeDebug {
         } else {
             Err(Error::Timeout)
         }
+    }
+
+    /// Get the current status (blocking).
+    pub fn get_status_blocking(&mut self) -> Result<Status, Error> {
+        smol::block_on(self.get_status())
     }
 
     /// Get the power configuration.  This lazy loads from the device.
@@ -115,7 +135,12 @@ impl GrappleProbeDebug {
         Ok(self.power_config.as_ref().expect("power_config not loaded"))
     }
 
-    /// Modify the power control parameters from the 
+    /// Get the power configuration (blocking).  This lazy loads from the device.
+    pub fn get_power_config_blocking(&mut self) -> Result<&PowerControl, Error> {
+        smol::block_on(self.get_power_config())
+    }
+
+    /// Modify the power control parameters from the probe.
     pub async fn modify_power_config<F: Fn(&mut PowerControl) -> bool>(&mut self, func: F) -> Result<(), Error> {
         use field::Field;
         let mut power_control = self.get_power_config().await?.clone();
@@ -126,6 +151,11 @@ impl GrappleProbeDebug {
             _ = self.power_config.replace(power_control);
         }
         Ok(())
+    }
+
+    /// Modify the power control parameters from the probe (blocking).
+    pub fn modify_power_config_blocking<F: Fn(&mut PowerControl) -> bool>(&mut self, func: F) -> Result<(), Error> {
+        smol::block_on(self.modify_power_config(func))
     }
 
     /// Read a raw configuration field.
@@ -145,6 +175,11 @@ impl GrappleProbeDebug {
         } else {
             Err(Error::Timeout)
         }
+    }
+
+    /// Read a raw configuration field (blocking).
+    pub fn read_field_blocking(&mut self, field: u8) -> Result<Vec<u8>, Error> {
+        smol::block_on(self.read_field(field))
     }
 
     /// Write a raw configuration field.
@@ -171,6 +206,12 @@ impl GrappleProbeDebug {
         }
     }
 
+    /// Write a raw configuration field (blocking).
+    pub fn write_field_blocking(&mut self, id: u8, data: &[u8]) -> Result<(), Error> {
+        smol::block_on(self.write_field(id, data))
+    }
+
+	/// Reset the target.
     pub async fn reset(&mut self, reset_type: ResetType) -> Result<(), Error> {
         let mut buf = [0u8; 64];
         let mut req = proto::ResetRequest::try_new(&mut buf).expect("buffer not big enough");
@@ -178,6 +219,11 @@ impl GrappleProbeDebug {
         let len = req.commit();
 
         self.request(&mut buf, len).await.and(Ok(()))
+    }
+
+    /// Reset the target (blocking).
+    pub fn reset_blocking(&mut self, reset_type: ResetType) -> Result<(), Error> {
+        smol::block_on(self.reset(reset_type))
     }
 
     async fn request<'a>(&mut self, buf: &'a mut [u8], req_len: usize) -> Result<proto::Packet<&'a [u8]>, Error> {
