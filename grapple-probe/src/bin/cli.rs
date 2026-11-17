@@ -95,13 +95,13 @@ struct PowerControlArgs {
     key5v: Option<bool>,
 }
 
-fn list(probes: Vec<GrappleProbe>) {
+fn list(probes: impl IntoIterator<Item = GrappleProbe>) {
     for probe in probes {
         println!("grapple probe: {}", probe.get_serial_number());
     }
 }
 
-fn status(probes: Vec<GrappleProbe>) {
+fn status(probes: impl IntoIterator<Item = GrappleProbe>) {
     for probe in probes {
         println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
@@ -124,7 +124,8 @@ fn status(probes: Vec<GrappleProbe>) {
     }
 }
 
-fn power_control(probes: Vec<GrappleProbe>, args: PowerControlArgs) {
+fn power_control(probes: impl IntoIterator<Item = GrappleProbe>, args: PowerControlArgs) {
+    let probes: Vec<GrappleProbe> = probes.into_iter().collect();
     if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
         println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
@@ -165,7 +166,7 @@ fn power_control(probes: Vec<GrappleProbe>, args: PowerControlArgs) {
     }
 }
 
-fn read_field(probes: Vec<GrappleProbe>, args: ReadConfigArgs) {
+fn read_field(probes: impl IntoIterator<Item = GrappleProbe>, args: ReadConfigArgs) {
     if let Some(probe) = probes.into_iter().next() {
         println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
@@ -181,7 +182,8 @@ fn read_field(probes: Vec<GrappleProbe>, args: ReadConfigArgs) {
     }
 }
 
-fn write_field(probes: Vec<GrappleProbe>, args: WriteConfigArgs) {
+fn write_field(probes: impl IntoIterator<Item = GrappleProbe>, args: WriteConfigArgs) {
+    let probes: Vec<GrappleProbe> = probes.into_iter().collect();
     if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
         println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
@@ -199,7 +201,7 @@ fn write_field(probes: Vec<GrappleProbe>, args: WriteConfigArgs) {
     }
 }
 
-fn panic(probes: Vec<GrappleProbe>) {
+fn panic(probes: impl IntoIterator<Item = GrappleProbe>) {
     if let Some(probe) = probes.into_iter().next() {
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
             println!("resetting: {}", probe.get_serial_number());
@@ -214,11 +216,9 @@ fn main() {
     let args = Args::parse();
 
     let probes = GrappleProbe::all_blocking()
-        .into_iter()
         .filter(|probe| {
             args.serial.as_ref().is_none_or(|serial| probe.get_serial_number() == serial.as_str())
-        })
-        .collect::<Vec<_>>();
+        });
 
     match args.command {
         Commands::List => list(probes),
