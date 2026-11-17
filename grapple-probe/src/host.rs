@@ -31,17 +31,16 @@ pub struct GrappleProbe {
 
 impl GrappleProbe {
     /// Enumerate all the Grapple Probes.
-    pub async fn all() -> Vec<GrappleProbe> {
+    pub async fn all() -> impl Iterator<Item = GrappleProbe> {
         nusb::list_devices()
             .await
             .expect("couldn't list usb devices")
             .filter(|dev| dev.product_string().is_some_and(|prod_str| prod_str.starts_with("Grapple Probe")))
             .map(|dev| GrappleProbe { dev })
-            .collect()
     }
 
     /// Enumerate all the Grapple Probes (blocking).
-    pub fn all_blocking() -> Vec<GrappleProbe> {
+    pub fn all_blocking() -> impl Iterator<Item = GrappleProbe> {
         smol::block_on(Self::all())
     }
 
