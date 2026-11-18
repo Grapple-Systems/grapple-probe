@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::{field, proto};
-use nusb::MaybeFuture;
+use futures::io::{AsyncReadExt, AsyncWriteExt};
 
 pub use proto::ResetType;
 
@@ -31,10 +31,17 @@ pub struct GrappleProbe {
 
 impl GrappleProbe {
     /// Enumerate all the Grapple Probes.
-    pub fn all() -> impl Iterator<Item = GrappleProbe> {
-        nusb::list_devices().wait().expect("couldn't list usb devices").
-            filter(|dev| dev.product_string().is_some_and(|prod_str| prod_str.starts_with("Grapple Probe"))).
-            map(|dev| GrappleProbe { dev })
+    pub async fn all() -> impl Iterator<Item = GrappleProbe> {
+        nusb::list_devices()
+            .await
+            .expect("couldn't list usb devices")
+            .filter(|dev| dev.product_string().is_some_and(|prod_str| prod_str.starts_with("Grapple Probe")))
+            .map(|dev| GrappleProbe { dev })
+    }
+
+    /// Enumerate all the Grapple Probes (blocking).
+    pub fn all_blocking() -> impl Iterator<Item = GrappleProbe> {
+        smol::block_on(Self::all())
     }
 
     /// Get the serial number.
@@ -43,48 +50,57 @@ impl GrappleProbe {
     }
 
     /// Open the cmsis dap interface.  When this is open the probe can't be used as a debugger.
-    pub fn open_cmsis_dap(&self) -> Result<GrappleProbeDebug, Error> {
+    pub async fn open_cmsis_dap(&self) -> Result<GrappleProbeSession, Error> {
         let if_info = self.dev.interfaces().find(|iface| iface.interface_string().is_some_and(|if_str| if_str.starts_with("CMSIS-DAP")));
         if let Some(if_info) = if_info {
-            let dev = self.dev.open().wait().map_err(|err| Error::from(err))?;
-            let iface = dev.claim_interface(if_info.interface_number()).wait().map_err(|err| Error::from(err))?;
+            let dev = self.dev.open().await.map_err(Error::from)?;
+            let iface = dev.claim_interface(if_info.interface_number()).await.map_err(Error::from)?;
             let mut eps = iface.descriptor().ok_or(Error::DeviceDoesntHaveCMSIS)?.endpoints();
             let tx_addr = eps.next().ok_or(Error::DeviceDoesntHaveCMSIS)?.address();
             let rx_addr = eps.next().ok_or(Error::DeviceDoesntHaveCMSIS)?.address();
             let tx = iface.endpoint::<nusb::transfer::Bulk, nusb::transfer::Out>(tx_addr).unwrap().writer(64);
             let mut rx = iface.endpoint::<nusb::transfer::Bulk, nusb::transfer::In>(rx_addr).unwrap().reader(64);
-            rx.set_read_timeout(std::time::Duration::from_secs(1));
+			rx.set_read_timeout(std::time::Duration::from_secs(1));
 
-            Ok(GrappleProbeDebug { rx, tx, power_config: None })
+            Ok(GrappleProbeSession { rx, tx, power_config: None })
         } else {
             Err(Error::DeviceDoesntHaveCMSIS)
         }
     }
+
+    /// Open the cmsis dap interface (blocking).  When this is open the probe can't be used as a debugger.
+    pub fn open_cmsis_dap_blocking(&self) -> Result<GrappleProbeSession, Error> {
+        smol::block_on(self.open_cmsis_dap())
+    }
 }
 
-impl GrappleProbeDebug {
+impl GrappleProbeSession {
     /// Get the firmware version.
-    pub fn get_firmware_version(&mut self) -> Result<String, Error> {
-        use std::io::{Read, Write};
+    pub async fn get_firmware_version(&mut self) -> Result<String, Error> {
         let req = [0x00u8, 0x09];
 
-        self.tx.write_all(&req).or(Err(Error::USBError))?;
-        self.tx.flush().or(Err(Error::USBError))?;
+        self.tx.write_all(&req).await.or(Err(Error::USBError))?;
+        self.tx.flush().await.or(Err(Error::USBError))?;
         let mut buf = [0u8; 64];
-        let read_size = self.rx.read(&mut buf).or(Err(Error::Timeout))?;
+        let read_size = self.rx.read(&mut buf).await.or(Err(Error::Timeout))?;
         if read_size >= 2 && buf[0] == 0 {
             let fw_ver_len = (buf[1] as usize).min(read_size - 2);
-            String::from_utf8(buf[2..2+fw_ver_len].to_vec()).map_err(|_| Error::ValueError)
+            String::from_utf8(buf[2..2+fw_ver_len].to_vec()).or(Err(Error::ValueError))
         } else {
             Err(Error::Timeout)
         }
     }
 
+    /// Get the firmware version (blocking).
+    pub fn get_firmware_version_blocking(&mut self) -> Result<String, Error> {
+        smol::block_on(self.get_firmware_version())
+    }
+
     /// Get the current status.
-    pub fn get_status(&mut self) -> Result<Status, Error> {
+    pub async fn get_status(&mut self) -> Result<Status, Error> {
         let mut buf = [0u8; 64];
         let len = proto::GetStatusRequest::try_new(&mut buf).expect("buffer not big enough").commit();
-        let res = self.request(&mut buf, len)?;
+        let res = self.request(&mut buf, len).await?;
         if let proto::Packet::GetStatusResponse(res) = res {
             let flags = proto::StatusFlags { inner: res.get_flags() };
             Ok(Status {
@@ -97,13 +113,18 @@ impl GrappleProbeDebug {
         }
     }
 
+    /// Get the current status (blocking).
+    pub fn get_status_blocking(&mut self) -> Result<Status, Error> {
+        smol::block_on(self.get_status())
+    }
+
     /// Get the power configuration.  This lazy loads from the device.
-    pub fn get_power_config(&mut self) -> Result<&PowerControl, Error> {
+    pub async fn get_power_config(&mut self) -> Result<&PowerControl, Error> {
         use field::Field;
         if self.power_config.is_none() {
-            if let Ok(data) = self.read_field(field::OwnedPowerControl::ID) {
+            if let Ok(data) = self.read_field(field::OwnedPowerControl::ID).await {
                 if let Ok(control) = field::PowerControl::try_parse(data) {
-                    self.power_config = Some(PowerControl::from_field(&control))
+                    self.power_config = Some(PowerControl::from_field(&control));
                 } else {
                     self.power_config = Some(PowerControl::from_field(&field::OwnedPowerControl::default()));
                 }
@@ -114,27 +135,37 @@ impl GrappleProbeDebug {
         Ok(self.power_config.as_ref().expect("power_config not loaded"))
     }
 
-    /// Modify the power control parameters from the 
-    pub fn modify_power_config<F: Fn(&mut PowerControl) -> bool>(&mut self, func: F) -> Result<(), Error> {
+    /// Get the power configuration (blocking).  This lazy loads from the device.
+    pub fn get_power_config_blocking(&mut self) -> Result<&PowerControl, Error> {
+        smol::block_on(self.get_power_config())
+    }
+
+    /// Modify the power control parameters from the probe.
+    pub async fn modify_power_config<F: Fn(&mut PowerControl) -> bool>(&mut self, func: F) -> Result<(), Error> {
         use field::Field;
-        let mut power_control = self.get_power_config()?.clone();
+        let mut power_control = self.get_power_config().await?.clone();
         if func(&mut power_control) {
             let mut power_control_field = field::OwnedPowerControl::default();
             power_control.fill_field(&mut power_control_field);
-            self.write_field(field::OwnedPowerControl::ID, power_control_field.data())?;
+            self.write_field(field::OwnedPowerControl::ID, power_control_field.data()).await?;
             _ = self.power_config.replace(power_control);
         }
         Ok(())
     }
 
+    /// Modify the power control parameters from the probe (blocking).
+    pub fn modify_power_config_blocking<F: Fn(&mut PowerControl) -> bool>(&mut self, func: F) -> Result<(), Error> {
+        smol::block_on(self.modify_power_config(func))
+    }
+
     /// Read a raw configuration field.
-    pub fn read_field(&mut self, field: u8) -> Result<Vec<u8>, Error> {
+    pub async fn read_field(&mut self, field: u8) -> Result<Vec<u8>, Error> {
         let mut buf = [0u8; 64];
         let mut req = proto::ReadFieldRequest::try_new(&mut buf).expect("buffer not big enough");
         req.set_field_id(field);
         let len = req.commit();
 
-        let res = self.request(&mut buf, len)?;
+        let res = self.request(&mut buf, len).await?;
         if let proto::Packet::ReadFieldResponse(res) = res {
             if res.get_status() == 0 && res.get_field_id() == field {
                 Ok(res.get_data().to_vec())
@@ -146,8 +177,13 @@ impl GrappleProbeDebug {
         }
     }
 
+    /// Read a raw configuration field (blocking).
+    pub fn read_field_blocking(&mut self, field: u8) -> Result<Vec<u8>, Error> {
+        smol::block_on(self.read_field(field))
+    }
+
     /// Write a raw configuration field.
-    pub fn write_field(&mut self, id: u8, data: &[u8]) -> Result<(), Error> {
+    pub async fn write_field(&mut self, id: u8, data: &[u8]) -> Result<(), Error> {
         let mut buf = [0u8; 64];
         let mut req = proto::WriteFieldRequest::try_new(&mut buf).expect("buffer not big enough");
         req.set_field_id(id);
@@ -158,7 +194,7 @@ impl GrappleProbeDebug {
         }
         let len = req.commit(data.len());
 
-        let res = self.request(&mut buf, len)?;
+        let res = self.request(&mut buf, len).await?;
         if let proto::Packet::WriteFieldResponse(res) = res {
             if res.get_status() == 0 && res.get_field_id() == id {
                 Ok(())
@@ -170,26 +206,35 @@ impl GrappleProbeDebug {
         }
     }
 
-    pub fn reset(&mut self, reset_type: ResetType) -> Result<(), Error> {
+    /// Write a raw configuration field (blocking).
+    pub fn write_field_blocking(&mut self, id: u8, data: &[u8]) -> Result<(), Error> {
+        smol::block_on(self.write_field(id, data))
+    }
+
+	/// Reset the target.
+    pub async fn reset(&mut self, reset_type: ResetType) -> Result<(), Error> {
         let mut buf = [0u8; 64];
         let mut req = proto::ResetRequest::try_new(&mut buf).expect("buffer not big enough");
         req.set_reset_type(reset_type as u8);
         let len = req.commit();
 
-        self.request(&mut buf, len).and(Ok(()))
+        self.request(&mut buf, len).await.and(Ok(()))
     }
 
-    fn request<'a>(&mut self, buf: &'a mut [u8], req_len: usize) -> Result<proto::Packet<&'a [u8]>, Error> {
-        use std::io::{Read, Write};
+    /// Reset the target (blocking).
+    pub fn reset_blocking(&mut self, reset_type: ResetType) -> Result<(), Error> {
+        smol::block_on(self.reset(reset_type))
+    }
 
-        self.tx.write_all(&buf[..req_len]).or(Err(Error::USBError))?;
-        self.tx.flush().or(Err(Error::USBError))?;
-        let read_size = self.rx.read(buf).or(Err(Error::Timeout))?;
+    async fn request<'a>(&mut self, buf: &'a mut [u8], req_len: usize) -> Result<proto::Packet<&'a [u8]>, Error> {
+        self.tx.write_all(&buf[..req_len]).await.or(Err(Error::USBError))?;
+        self.tx.flush().await.or(Err(Error::USBError))?;
+        let read_size = self.rx.read(buf).await.or(Err(Error::Timeout))?;
         proto::Packet::try_parse_response(&buf[..read_size]).or(Err(Error::Timeout))
     }
 }
 
-pub struct GrappleProbeDebug {
+pub struct GrappleProbeSession {
     rx: nusb::io::EndpointRead<nusb::transfer::Bulk>,
     tx: nusb::io::EndpointWrite<nusb::transfer::Bulk>,
     power_config: Option<PowerControl>,

@@ -104,13 +104,13 @@ fn list(probes: impl Iterator<Item = GrappleProbe>) {
 fn status(probes: impl Iterator<Item = GrappleProbe>) {
     for probe in probes {
         println!("grapple probe: {}", probe.get_serial_number());
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
-            if let Ok(fw_version) = dap.get_firmware_version() {
+        if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
+            if let Ok(fw_version) = dap.get_firmware_version_blocking() {
                 println!("\tfw version: {}", fw_version);
             } else {
                 println!("\tfailed to get firmware version");
             }
-            if let Ok(status) = dap.get_status() {
+            if let Ok(status) = dap.get_status_blocking() {
                 println!("\tgnd detected: {}", status.gnddet);
                 println!("\ttvcc: {} mv", status.target_mv);
                 println!("\tsignal: {} mv", status.signal_mv);
@@ -124,12 +124,11 @@ fn status(probes: impl Iterator<Item = GrappleProbe>) {
     }
 }
 
-fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlArgs) {
-    let probes: Vec<GrappleProbe> = probes.collect();
-    if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
+fn power_control(mut probes: impl Iterator<Item = GrappleProbe>, args: PowerControlArgs) {
+    if let Some(probe) = probes.next() {
         println!("grapple probe: {}", probe.get_serial_number());
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
-            if let Ok(()) = dap.modify_power_config(|cfg| {
+        if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
+            if let Ok(()) = dap.modify_power_config_blocking(|cfg| {
                     let mut changed = false;
                     if args.default { cfg.clone_from(&PowerControl::default()); changed = true; }
                     if let Some(follow_target) = args.follow_target { cfg.signal_follows_tvcc = follow_target; changed = true; }
@@ -144,7 +143,7 @@ fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlA
                     changed
                 })
             {
-                if let Ok(config) = dap.get_power_config() {
+                if let Ok(config) = dap.get_power_config_blocking() {
                     println!("\t5VKey enabled: {}", config.key5v_enable);
                     let gnddet = if config.signal_gated_by_gnddet { "[gnddet]" } else { "gnddet" };
                     let tvcc = if config.signal_gated_by_tvcc { "[tvcc]" } else { "tvcc" };
@@ -169,8 +168,8 @@ fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlA
 fn read_field(mut probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigArgs) {
     if let Some(probe) = probes.next() {
         println!("grapple probe: {}", probe.get_serial_number());
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
-            if let Ok(field_data) = dap.read_field(args.id) {
+        if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
+            if let Ok(field_data) = dap.read_field_blocking(args.id) {
                 println!("\t{}: {}", args.id, hex::encode(field_data));
             }
             else {
@@ -182,12 +181,11 @@ fn read_field(mut probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigAr
     }
 }
 
-fn write_field(probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs) {
-    let probes: Vec<GrappleProbe> = probes.collect();
-    if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
+fn write_field(mut probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs) {
+    if let Some(probe) = probes.next() {
         println!("grapple probe: {}", probe.get_serial_number());
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
-            if dap.write_field(args.id, &args.data).is_ok() {
+        if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
+            if dap.write_field_blocking(args.id, &args.data).is_ok() {
                 println!("\tsuccess");
             }
             else {
@@ -203,9 +201,9 @@ fn write_field(probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs
 
 fn panic(mut probes: impl Iterator<Item = GrappleProbe>) {
     if let Some(probe) = probes.next() {
-        if let Ok(mut dap) = probe.open_cmsis_dap() {
+        if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
             println!("resetting: {}", probe.get_serial_number());
-            let _ = dap.reset(grapple_probe::proto::ResetType::Panic);
+            let _ = dap.reset_blocking(grapple_probe::proto::ResetType::Panic);
         }
     }
 }
@@ -215,9 +213,10 @@ fn main() {
 
     let args = Args::parse();
 
-    let probes = GrappleProbe::all().filter(|probe| {
-        args.serial.as_ref().is_none_or(|serial| probe.get_serial_number() == serial.as_str())
-    });
+    let probes = GrappleProbe::all_blocking()
+        .filter(|probe| {
+            args.serial.as_ref().is_none_or(|serial| probe.get_serial_number() == serial.as_str())
+        });
 
     match args.command {
         Commands::List => list(probes),

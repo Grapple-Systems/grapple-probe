@@ -4,14 +4,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 //! A library for interfacing with Grapple Probes.
-//! 
-//! ``` rust
+//!
+//! ```no_run
 //! // Print out the serial number, measured target voltage, and commanded signal voltage for each detected Grapple Probe.
-//! for probe in GrappleProbe.all() {
+//! for probe in grapple_probe::GrappleProbe::all_blocking() {
 //!     println!("grapple probe: {}", probe.get_serial_number());
-//! 
-//!     let mut dap = probe.open_cmsis_dap().unwrap();
-//!     let status = dap.get_status().unwrap();
+//!
+//!     let mut dap = probe.open_cmsis_dap_blocking().unwrap();
+//!     let status = dap.get_status_blocking().unwrap();
 //!     println!("\ttvcc: {} mv, signal: {} mv", status.target_mv, status.signal_mv);
 //! }
 //! ```
@@ -27,4 +27,4 @@ pub mod field;
 mod host;
 
 #[cfg(feature = "std")]
-pub use host::{Error, GrappleProbe, GrappleProbeDebug, PowerControl, Status};
+pub use host::{Error, GrappleProbe, GrappleProbeSession, PowerControl, Status};
