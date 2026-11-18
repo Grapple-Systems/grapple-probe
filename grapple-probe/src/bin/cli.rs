@@ -125,7 +125,7 @@ fn status(probes: impl Iterator<Item = GrappleProbe>) {
 }
 
 fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlArgs) {
-    let probes: Vec<GrappleProbe> = probes.into_iter().collect();
+    let probes: Vec<GrappleProbe> = probes.collect();
     if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
         println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
@@ -166,8 +166,8 @@ fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlA
     }
 }
 
-fn read_field(probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigArgs) {
-    if let Some(probe) = probes.into_iter().next() {
+fn read_field(mut probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigArgs) {
+    if let Some(probe) = probes.next() {
         println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
             if let Ok(field_data) = dap.read_field_blocking(args.id) {
@@ -183,7 +183,7 @@ fn read_field(probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigArgs) 
 }
 
 fn write_field(probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs) {
-    let probes: Vec<GrappleProbe> = probes.into_iter().collect();
+    let probes: Vec<GrappleProbe> = probes.collect();
     if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
         println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
@@ -201,8 +201,8 @@ fn write_field(probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs
     }
 }
 
-fn panic(probes: impl Iterator<Item = GrappleProbe>) {
-    if let Some(probe) = probes.into_iter().next() {
+fn panic(mut probes: impl Iterator<Item = GrappleProbe>) {
+    if let Some(probe) = probes.next() {
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
             println!("resetting: {}", probe.get_serial_number());
             let _ = dap.reset_blocking(grapple_probe::proto::ResetType::Panic);
