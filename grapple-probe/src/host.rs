@@ -59,7 +59,8 @@ impl GrappleProbe {
             let tx_addr = eps.next().ok_or(Error::DeviceDoesntHaveCMSIS)?.address();
             let rx_addr = eps.next().ok_or(Error::DeviceDoesntHaveCMSIS)?.address();
             let tx = iface.endpoint::<nusb::transfer::Bulk, nusb::transfer::Out>(tx_addr).unwrap().writer(64);
-            let rx = iface.endpoint::<nusb::transfer::Bulk, nusb::transfer::In>(rx_addr).unwrap().reader(64);
+            let mut rx = iface.endpoint::<nusb::transfer::Bulk, nusb::transfer::In>(rx_addr).unwrap().reader(64);
+			rx.set_read_timeout(std::time::Duration::from_secs(1));
 
             Ok(GrappleProbeSession { rx, tx, power_config: None })
         } else {
