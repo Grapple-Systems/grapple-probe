@@ -125,8 +125,7 @@ fn status(probes: impl Iterator<Item = GrappleProbe>) {
 }
 
 fn power_control(probes: impl Iterator<Item = GrappleProbe>, args: PowerControlArgs) {
-    let probes: Vec<GrappleProbe> = probes.collect();
-    if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
+    if let Some(probe) = probes.next() {
         println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
             if let Ok(()) = dap.modify_power_config_blocking(|cfg| {
@@ -183,8 +182,7 @@ fn read_field(mut probes: impl Iterator<Item = GrappleProbe>, args: ReadConfigAr
 }
 
 fn write_field(probes: impl Iterator<Item = GrappleProbe>, args: WriteConfigArgs) {
-    let probes: Vec<GrappleProbe> = probes.collect();
-    if let Some(probe) = (probes.len() == 1).then(|| probes.first().unwrap()) {
+    if let Some(probe) = probes.next() {
         println!("grapple probe: {}", probe.get_serial_number());
         if let Ok(mut dap) = probe.open_cmsis_dap_blocking() {
             if dap.write_field_blocking(args.id, &args.data).is_ok() {
