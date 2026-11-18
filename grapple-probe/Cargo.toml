@@ -22,9 +22,9 @@ required-features = ["std"]
 
 [dependencies]
 clap = { version = "4.5.54", features = ["derive"], optional = true }
+futures = { version = "0.3", default-features = false, features = ["std"], optional = true }
 hex = { version = "0.4.3", optional = true }
 nusb = { version = "0.2.1", optional = true, features = ["smol"] }
 num_enum = { version = "0.7.5", default-features = false }
 packet-gen = { version = "0.1", path = "../packet-gen" }
-futures = { version = "0.3", default-features = false, features = ["std"], optional = true }
 smol = { version = "2", optional = true }
