@@ -50,7 +50,7 @@ impl GrappleProbe {
     }
 
     /// Open the cmsis dap interface.  When this is open the probe can't be used as a debugger.
-    pub async fn open_cmsis_dap(&self) -> Result<GrappleProbeDebug, Error> {
+    pub async fn open_cmsis_dap(&self) -> Result<GrappleProbeSession, Error> {
         let if_info = self.dev.interfaces().find(|iface| iface.interface_string().is_some_and(|if_str| if_str.starts_with("CMSIS-DAP")));
         if let Some(if_info) = if_info {
             let dev = self.dev.open().await.map_err(Error::from)?;
@@ -61,19 +61,19 @@ impl GrappleProbe {
             let tx = iface.endpoint::<nusb::transfer::Bulk, nusb::transfer::Out>(tx_addr).unwrap().writer(64);
             let rx = iface.endpoint::<nusb::transfer::Bulk, nusb::transfer::In>(rx_addr).unwrap().reader(64);
 
-            Ok(GrappleProbeDebug { rx, tx, power_config: None })
+            Ok(GrappleProbeSession { rx, tx, power_config: None })
         } else {
             Err(Error::DeviceDoesntHaveCMSIS)
         }
     }
 
     /// Open the cmsis dap interface (blocking).  When this is open the probe can't be used as a debugger.
-    pub fn open_cmsis_dap_blocking(&self) -> Result<GrappleProbeDebug, Error> {
+    pub fn open_cmsis_dap_blocking(&self) -> Result<GrappleProbeSession, Error> {
         smol::block_on(self.open_cmsis_dap())
     }
 }
 
-impl GrappleProbeDebug {
+impl GrappleProbeSession {
     /// Get the firmware version.
     pub async fn get_firmware_version(&mut self) -> Result<String, Error> {
         let req = [0x00u8, 0x09];
@@ -233,7 +233,7 @@ impl GrappleProbeDebug {
     }
 }
 
-pub struct GrappleProbeDebug {
+pub struct GrappleProbeSession {
     rx: nusb::io::EndpointRead<nusb::transfer::Bulk>,
     tx: nusb::io::EndpointWrite<nusb::transfer::Bulk>,
     power_config: Option<PowerControl>,
