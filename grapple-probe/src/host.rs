@@ -78,13 +78,13 @@ impl GrappleProbeSession {
     pub async fn get_firmware_version(&mut self) -> Result<String, Error> {
         let req = [0x00u8, 0x09];
 
-        self.tx.write_all(&req).await.map_err(|_| Error::USBError)?;
-        self.tx.flush().await.map_err(|_| Error::USBError)?;
+        self.tx.write_all(&req).await.or(Err(Error::USBError))?;
+        self.tx.flush().await.or(Err(Error::USBError))?;
         let mut buf = [0u8; 64];
-        let read_size = self.rx.read(&mut buf).await.map_err(|_| Error::Timeout)?;
+        let read_size = self.rx.read(&mut buf).await.or(Err(Error::Timeout))?;
         if read_size >= 2 && buf[0] == 0 {
             let fw_ver_len = (buf[1] as usize).min(read_size - 2);
-            String::from_utf8(buf[2..2+fw_ver_len].to_vec()).map_err(|_| Error::ValueError)
+            String::from_utf8(buf[2..2+fw_ver_len].to_vec()).or(Err(Error::ValueError))
         } else {
             Err(Error::Timeout)
         }
@@ -226,9 +226,9 @@ impl GrappleProbeSession {
     }
 
     async fn request<'a>(&mut self, buf: &'a mut [u8], req_len: usize) -> Result<proto::Packet<&'a [u8]>, Error> {
-        self.tx.write_all(&buf[..req_len]).await.map_err(|_| Error::USBError)?;
-        self.tx.flush().await.map_err(|_| Error::USBError)?;
-        let read_size = self.rx.read(buf).await.map_err(|_| Error::Timeout)?;
+        self.tx.write_all(&buf[..req_len]).await.or(Err(Error::USBError))?;
+        self.tx.flush().await.or(Err(Error::USBError))?;
+        let read_size = self.rx.read(buf).await.or(Err(Error::Timeout))?;
         proto::Packet::try_parse_response(&buf[..read_size]).or(Err(Error::Timeout))
     }
 }
